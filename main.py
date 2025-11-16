@@ -1,6 +1,8 @@
 import os
+import threading
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from flask import Flask
 
 # 🔑 Token vem das variáveis de ambiente do Render
 TOKEN = os.environ.get("BOT_TOKEN")
@@ -12,8 +14,8 @@ bot = telebot.TeleBot(TOKEN)
 
 # 🔗 SEUS LINKS / CONTATO
 LINK_PLATAFORMA = "https://33popn1.com/?pid=3779132759"   # seu link da Pop
-LINK_RTP = "https://redepop-rtp.netlify.app/"                                            # se quiser depois, coloque aqui o link do seu site RTP
-USER_SUPORTE = "@Whsantosz"                              # pode alterar pro seu @ exato se for outro
+LINK_RTP = ""                                            # se quiser depois, coloque aqui o link do seu site RTP
+USER_SUPORTE = "@WerickyDK"                              # seu @ no Telegram
 
 # ------------ MENUS ------------ #
 
@@ -64,7 +66,7 @@ def criar_botoes_chamada(incluir_rtp=False):
     )
     return markup
 
-# ------------ HANDLERS ------------ #
+# ------------ HANDLERS DO BOT ------------ #
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
@@ -157,8 +159,25 @@ def callback_query(call):
         parse_mode="Markdown"
     )
 
+# ------------ FLASK + THREAD DO BOT ------------ #
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot Rede Pop Info - OK"
+
+def iniciar_bot():
+    print("Iniciando bot Telegram (polling)...")
+    bot.infinity_polling(skip_pending=True)
 
 if __name__ == "__main__":
-    print("Bot Rede Pop Info rodando...")
-    bot.infinity_polling()
+    # inicia o bot em uma thread separada
+    t = threading.Thread(target=iniciar_bot, daemon=True)
+    t.start()
+
+    # inicia o servidor web para o Render
+    port = int(os.environ.get("PORT", 10000))
+    print(f"Servidor Flask rodando na porta {port}...")
+    app.run(host="0.0.0.0", port=port)
 
