@@ -14,8 +14,8 @@ bot = telebot.TeleBot(TOKEN)
 
 # 🔗 SEUS LINKS / CONTATO
 LINK_PLATAFORMA = "https://33popn1.com/?pid=3779132759"   # seu link da Pop
-LINK_RTP = ""                                            # se quiser depois, coloque aqui o link do seu site RTP
-USER_SUPORTE = "@WerickyDK"                              # seu @ no Telegram
+LINK_RTP = "redepop-rtp.netlify.app"                                            # se quiser depois, coloque aqui o link do seu site RTP
+USER_SUPORTE = "whsantosz"                              # seu @ no Telegram
 
 # ------------ MENUS ------------ #
 
