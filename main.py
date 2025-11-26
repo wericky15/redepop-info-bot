@@ -14,12 +14,39 @@ bot = telebot.TeleBot(TOKEN)
 
 # 🔗 SEUS LINKS / CONTATO
 LINK_PLATAFORMA = "https://33popn1.com/?pid=3779132759"   # seu link da Pop
-LINK_RTP = "redepop-rtp.netlify.app"                                            # se quiser depois, coloque aqui o link do seu site RTP
-USER_SUPORTE = "whsantosz"                              # seu @ no Telegram
+LINK_RTP = ""                                             # se quiser depois, coloque aqui o link do seu site RTP
+USER_SUPORTE = "@WerickyDK"                               # seu @ no Telegram
+LINK_GRUPO_VIP = "https://t.me/werickyredpop"             # seu grupo VIP
 
-# ------------ MENUS ------------ #
+# ------------ MENUS / TECLADOS ------------ #
 
-def criar_menu_principal():
+def criar_menu_inicial():
+    """
+    Menu focado em conversão:
+    - Lead para bônus / VIP
+    - Informações da plataforma
+    - Contato com gerente
+    """
+    markup = InlineKeyboardMarkup()
+    markup.row(
+        InlineKeyboardButton("🎯 Quero bônus e acesso VIP", callback_data="lead_vip")
+    )
+    markup.row(
+        InlineKeyboardButton("ℹ Informações sobre a Rede Pop", callback_data="menu_info")
+    )
+    markup.row(
+        InlineKeyboardButton(
+            "👨‍💼 Falar com o Gerente Geral",
+            url=f"https://t.me/{USER_SUPORTE.replace('@','')}"
+        )
+    )
+    return markup
+
+
+def criar_menu_info():
+    """
+    Menu de informações gerais sobre a Rede Pop.
+    """
     markup = InlineKeyboardMarkup()
     markup.row(
         InlineKeyboardButton("📌 O que é a Rede Pop?", callback_data="info_oquee")
@@ -35,51 +62,69 @@ def criar_menu_principal():
         InlineKeyboardButton("📊 RTP / Dicas de jogos", callback_data="info_rtp")
     )
     markup.row(
-        InlineKeyboardButton("🎯 Entrar na plataforma", url=LINK_PLATAFORMA)
-    )
-    markup.row(
-        InlineKeyboardButton(
-            "🧑‍💻 Falar com o gerente",
-            url=f"https://t.me/{USER_SUPORTE.replace('@','')}"
-        )
+        InlineKeyboardButton("⬅ Voltar", callback_data="voltar_inicio")
     )
     return markup
 
 
-def criar_botoes_chamada(incluir_rtp=False):
+def criar_botoes_conversao(incluir_rtp=False):
+    """
+    Botões para conversão direta: plataforma, grupo VIP, contato.
+    """
     markup = InlineKeyboardMarkup()
     markup.row(
-        InlineKeyboardButton("🎯 Entrar na plataforma", url=LINK_PLATAFORMA)
+        InlineKeyboardButton("🎯 Entrar na Plataforma", url=LINK_PLATAFORMA)
+    )
+    markup.row(
+        InlineKeyboardButton("👑 Entrar no Grupo VIP", url=LINK_GRUPO_VIP)
+    )
+    markup.row(
+        InlineKeyboardButton(
+            "👨‍💼 Falar com o Gerente Geral",
+            url=f"https://t.me/{USER_SUPORTE.replace('@','')}"
+        )
     )
     if incluir_rtp and LINK_RTP:
         markup.row(
-            InlineKeyboardButton("📊 Ver RTP agora", url=LINK_RTP)
+            InlineKeyboardButton("📊 Ver RTP dos Jogos", url=LINK_RTP)
         )
     markup.row(
-        InlineKeyboardButton(
-            "🧑‍💻 Falar com o gerente",
-            url=f"https://t.me/{USER_SUPORTE.replace('@','')}"
-        )
-    )
-    markup.row(
-        InlineKeyboardButton("⬅ Voltar ao menu", callback_data="voltar_menu")
+        InlineKeyboardButton("⬅ Voltar ao início", callback_data="voltar_inicio")
     )
     return markup
+
+
+# ------------ REGISTRO DE LEADS ------------ #
+
+def registrar_lead(user):
+    """
+    Registra nos logs um jogador que demonstrou interesse em bônus / VIP.
+    Você consegue ver isso na aba Logs do Render.
+    """
+    username = user.username or ""
+    first_name = user.first_name or ""
+    user_id = user.id
+    print(f"[LEAD] Novo jogador interessado: {first_name} (@{username}) id={user_id}")
+
 
 # ------------ HANDLERS DO BOT ------------ #
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     texto = (
-        "👋 Seja bem-vindo ao *Bot de Informações Rede Pop*.\n\n"
-        "Aqui você tira dúvidas sobre a plataforma e ainda pode entrar "
-        "pelo meu link com suporte completo.\n\n"
-        "Escolha uma opção no menu abaixo 👇"
+        "👋 Olá, tudo bem?\n\n"
+        "Sou o *Bot Oficial de Informações da Rede Pop*, gerenciado pelo "
+        "*Wericky (Gerente Geral)*.\n\n"
+        "Aqui você pode:\n"
+        "• Entender como a plataforma funciona\n"
+        "• Solicitar orientação profissional\n"
+        "• Ter acesso a bônus e grupo VIP com suporte direto\n\n"
+        "Selecione uma opção abaixo para continuar 👇"
     )
     bot.send_message(
         message.chat.id,
         texto,
-        reply_markup=criar_menu_principal(),
+        reply_markup=criar_menu_inicial(),
         parse_mode="Markdown"
     )
 
@@ -88,68 +133,109 @@ def send_welcome(message):
 def callback_query(call):
     data = call.data
 
+    # Lead de bônus / VIP
+    if data == "lead_vip":
+        registrar_lead(call.from_user)
+        texto = (
+            "🎯 *Acesso a Bônus e Grupo VIP*\n\n"
+            "Você demonstrou interesse em receber orientação profissional, "
+            "acesso a bônus e participar do grupo VIP.\n\n"
+            "Abaixo estão as opções para você avançar de forma segura:"
+        )
+        botoes = criar_botoes_conversao(incluir_rtp=bool(LINK_RTP))
+
+        bot.edit_message_text(
+            texto,
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            reply_markup=botoes,
+            parse_mode="Markdown"
+        )
+        return
+
+    # Menu de informações
+    if data == "menu_info":
+        bot.edit_message_text(
+            "ℹ *Informações sobre a Rede Pop*\n\n"
+            "Escolha uma das opções abaixo:",
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            reply_markup=criar_menu_info(),
+            parse_mode="Markdown"
+        )
+        return
+
+    # Voltar ao início
+    if data == "voltar_inicio":
+        bot.edit_message_text(
+            "Selecione uma opção para continuar 👇",
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            reply_markup=criar_menu_inicial()
+        )
+        return
+
+    # Informações detalhadas
     if data == "info_oquee":
         texto = (
             "📌 *O que é a Rede Pop?*\n\n"
-            "Plataforma de jogos/slots com vários provedores, bônus e promoções.\n"
-            "Você joga com responsabilidade e aproveita campanhas, missões e ofertas.\n"
+            "A Rede Pop é uma plataforma de jogos/slots com diversos provedores, "
+            "campanhas de bônus e oportunidades diárias.\n\n"
+            "Trabalhando com responsabilidade, é possível aproveitar melhor "
+            "os benefícios oferecidos pela plataforma."
         )
-        botoes = criar_botoes_chamada()
+        botoes = criar_botoes_conversao(incluir_rtp=False)
 
     elif data == "info_deposito":
         texto = (
             "💰 *Como depositar na Rede Pop*\n\n"
-            "1️⃣ Clique em *Entrar na plataforma* abaixo.\n"
-            "2️⃣ Faça seu cadastro ou login.\n"
-            "3️⃣ Vá em *Depósito*.\n"
-            "4️⃣ Escolha PIX (ou outro método) e siga as instruções.\n\n"
-            "Se travar em alguma parte, me chama no privado. 😉"
+            "1️⃣ Acesse a plataforma pelo botão *Entrar na Plataforma*.\n"
+            "2️⃣ Realize seu cadastro ou login.\n"
+            "3️⃣ No menu interno, selecione *Depósito*.\n"
+            "4️⃣ Escolha o método disponível (PIX, por exemplo) e siga as instruções.\n\n"
+            "Em caso de dúvidas, utilize o botão para falar diretamente com o Gerente Geral."
         )
-        botoes = criar_botoes_chamada()
+        botoes = criar_botoes_conversao(incluir_rtp=False)
 
     elif data == "info_saque":
         texto = (
             "💸 *Como sacar na Rede Pop*\n\n"
-            "1️⃣ Confira se cumpriu as regras de bônus/rollover.\n"
-            "2️⃣ Vá em *Saque* na plataforma.\n"
-            "3️⃣ Escolha PIX e informe os dados certinho.\n"
-            "4️⃣ Confirme e aguarde o processamento.\n\n"
-            "Dúvida sobre limite, tempo ou erro? Fala comigo. 👇"
+            "1️⃣ Verifique se cumpriu todas as condições de bônus/rollover, caso tenha utilizado.\n"
+            "2️⃣ No menu da plataforma, selecione *Saque*.\n"
+            "3️⃣ Escolha o método desejado (como PIX) e informe os dados corretamente.\n"
+            "4️⃣ Confirme a operação e aguarde o processamento.\n\n"
+            "Se houver qualquer divergência, o suporte via Gerente Geral está à disposição."
         )
-        botoes = criar_botoes_chamada()
+        botoes = criar_botoes_conversao(incluir_rtp=False)
 
     elif data == "info_bonus":
         texto = (
             "🎁 *Bônus e promoções*\n\n"
-            "A Rede Pop costuma ter bônus de cadastro, recarga e campanhas especiais.\n\n"
-            "Eu aviso sempre as melhores oportunidades pra quem entra pelo meu link.\n"
-            "Entre na plataforma pelo botão abaixo e fala comigo pra eu te orientar no bônus do dia. 🔥"
+            "A plataforma trabalha com campanhas de bônus que podem incluir:\n"
+            "• Bônus de cadastro\n"
+            "• Bônus de recarga\n"
+            "• Campanhas sazonais\n\n"
+            "As melhores oportunidades e orientações são fornecidas diretamente "
+            "para quem entra pelo meu link e participa do grupo VIP."
         )
-        botoes = criar_botoes_chamada()
+        botoes = criar_botoes_conversao(incluir_rtp=False)
 
     elif data == "info_rtp":
         texto = (
             "📊 *RTP / Dicas de jogos*\n\n"
-            "RTP é a taxa de retorno teórico do jogo.\n"
-            "Eu acompanho os jogos que estão rodando melhor no momento.\n"
+            "O RTP (Retorno Teórico ao Jogador) indica, em teoria, quanto um jogo "
+            "tende a devolver no longo prazo.\n\n"
+            "Eu acompanho constantemente os jogos que estão com melhor desempenho "
+            "e oriento de forma profissional."
         )
         if LINK_RTP:
-            texto += "🔗 Veja uma lista de jogos/RTP clicando no botão abaixo.\n"
-            botoes = criar_botoes_chamada(incluir_rtp=True)
+            texto += "\n\nVocê pode acessar uma lista de jogos e RTP pelo botão abaixo."
+            botoes = criar_botoes_conversao(incluir_rtp=True)
         else:
-            texto += "Quer dicas atualizadas? Me chama no privado. 😉\n"
-            botoes = criar_botoes_chamada()
-
-    elif data == "voltar_menu":
-        bot.edit_message_text(
-            "Escolha uma opção no menu abaixo 👇",
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            reply_markup=criar_menu_principal()
-        )
-        return
+            texto += "\n\nPara receber indicações atualizadas, utilize o botão para falar diretamente comigo."
+            botoes = criar_botoes_conversao(incluir_rtp=False)
     else:
-        return
+        return  # callback desconhecido, não faz nada
 
     bot.edit_message_text(
         texto,
@@ -158,6 +244,7 @@ def callback_query(call):
         reply_markup=botoes,
         parse_mode="Markdown"
     )
+
 
 # ------------ FLASK + THREAD DO BOT ------------ #
 
@@ -180,4 +267,3 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"Servidor Flask rodando na porta {port}...")
     app.run(host="0.0.0.0", port=port)
-
