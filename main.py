@@ -15,7 +15,7 @@ bot = telebot.TeleBot(TOKEN)
 # 🔗 SEUS LINKS / CONTATO
 LINK_PLATAFORMA = "https://33popn1.com/?pid=3779132759"   # seu link da Pop
 LINK_RTP = ""                                             # se quiser depois, coloque aqui o link do seu site RTP
-USER_SUPORTE = "@WerickyDK"                               # seu @ no Telegram
+USER_SUPORTE = "@Whsantosz"                               # seu @ no Telegram
 LINK_GRUPO_VIP = "https://t.me/werickyredpop"             # seu grupo VIP
 
 # ------------ MENUS / TECLADOS ------------ #
@@ -25,7 +25,7 @@ def criar_menu_inicial():
     Menu focado em conversão:
     - Lead para bônus / VIP
     - Informações da plataforma
-    - Contato com gerente
+    - Contato com Agente Oficial
     """
     markup = InlineKeyboardMarkup()
     markup.row(
@@ -36,7 +36,7 @@ def criar_menu_inicial():
     )
     markup.row(
         InlineKeyboardButton(
-            "👨‍💼 Falar com o Gerente Geral",
+            "👨‍💼 Falar com o Agente Oficial",
             url=f"https://t.me/{USER_SUPORTE.replace('@','')}"
         )
     )
@@ -80,13 +80,13 @@ def criar_botoes_conversao(incluir_rtp=False):
     )
     markup.row(
         InlineKeyboardButton(
-            "👨‍💼 Falar com o Gerente Geral",
+            "👨‍💼 Falar com o Agente Oficial",
             url=f"https://t.me/{USER_SUPORTE.replace('@','')}"
         )
     )
     if incluir_rtp and LINK_RTP:
         markup.row(
-            InlineKeyboardButton("📊 Ver RTP dos Jogos", url=LINK_RTP)
+            InlineKeyboardButton("📊 Ver RTP dos Jogos", url=https://redepop-rtp.netlify.app/)
         )
     markup.row(
         InlineKeyboardButton("⬅ Voltar ao início", callback_data="voltar_inicio")
@@ -114,7 +114,7 @@ def send_welcome(message):
     texto = (
         "👋 Olá, tudo bem?\n\n"
         "Sou o *Bot Oficial de Informações da Rede Pop*, gerenciado pelo "
-        "*Wericky (Gerente Geral)*.\n\n"
+        "*Wericky DK (Agente Oficial)*.\n\n"
         "Aqui você pode:\n"
         "• Entender como a plataforma funciona\n"
         "• Solicitar orientação profissional\n"
