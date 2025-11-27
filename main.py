@@ -1,158 +1,65 @@
-import os
-import threading
-
 import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from flask import Flask
-
-# ========= CONFIG BÁSICA ========= #
+from telebot import types
+import os
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN não encontrado. Defina a variável de ambiente no Render.")
-
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Seus links
-LINK_PLATAFORMA = "https://33popn1.com/?pid=3779132759"    # link da plataforma
-LINK_GRUPO_VIP = "https://t.me/werickyredpop"              # grupo VIP
-USER_SUPORTE = "Whsantosz"                                 # seu @ sem o @
-
-
-# ========= FUNÇÕES DE MENU ========= #
-
-def menu_inicial():
-    markup = InlineKeyboardMarkup()
-    markup.row(
-        InlineKeyboardButton("🎯 Quero bônus e acesso VIP", callback_data="lead_vip")
-    )
-    markup.row(
-        InlineKeyboardButton("ℹ Informações sobre a Rede Pop", callback_data="info")
-    )
-    markup.row(
-        InlineKeyboardButton(
-            "👨‍💼 Falar com o Agente Oficial",
-            url=f"https://t.me/{USER_SUPORTE}"
-        )
-    )
-    return markup
-
-
-def menu_conversao():
-    markup = InlineKeyboardMarkup()
-    markup.row(
-        InlineKeyboardButton("🎯 Entrar na Plataforma", url=LINK_PLATAFORMA)
-    )
-    markup.row(
-        InlineKeyboardButton("👑 Entrar no Grupo VIP", url=LINK_GRUPO_VIP)
-    )
-    markup.row(
-        InlineKeyboardButton(
-            "👨‍💼 Falar com o Agente Oficial",
-            url=f"https://t.me/{USER_SUPORTE}"
-        )
-    )
-    markup.row(
-        InlineKeyboardButton("⬅ Voltar ao início", callback_data="voltar_inicio")
-    )
-    return markup
-
-
-# ========= REGISTRO DE LEAD ========= #
-
+# Função para registrar leads no log
 def registrar_lead(user):
     username = user.username or ""
     first_name = user.first_name or ""
     user_id = user.id
     print(f"[LEAD] Novo jogador interessado: {first_name} (@{username}) id={user_id}")
 
-
-# ========= HANDLERS DO BOT ========= #
-
-@bot.message_handler(commands=['start', 'help'])
+# Comando /start
+@bot.message_handler(commands=['start'])
 def send_welcome(message):
+    markup = types.InlineKeyboardMarkup()
+    btn1 = types.InlineKeyboardButton("🎯 Quero bônus e acesso VIP", callback_data="lead_vip")
+    btn2 = types.InlineKeyboardButton("ℹ️ Informações sobre a Rede Pop", callback_data="info")
+    btn3 = types.InlineKeyboardButton("👨‍💼 Falar com o Agente Oficial", url="https://t.me/werickyredpop")
+    markup.add(btn1)
+    markup.add(btn2)
+    markup.add(btn3)
+
     texto = (
         "👋 Olá, tudo bem?\n\n"
-        "Sou o *Bot Oficial de Informações da Rede Pop*, gerenciado por "
-        "*Wericky DK (Agente Oficial da Rede Pop).* \n\n"
+        "Sou o *Bot Oficial de Informações da Rede Pop*, gerenciado por *Wericky DK (Agente Oficial da Rede Pop)*.\n\n"
         "Aqui você pode:\n"
         "• Entender como a plataforma funciona\n"
         "• Solicitar orientação profissional\n"
         "• Ter acesso a bônus e grupo VIP com suporte direto\n\n"
         "Selecione uma opção abaixo para continuar 👇"
     )
-    bot.send_message(
-        message.chat.id,
-        texto,
-        parse_mode="Markdown",
-        reply_markup=menu_inicial()
-    )
 
+    bot.send_message(message.chat.id, texto, parse_mode="Markdown", reply_markup=markup)
 
+# Respostas aos botões
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    data = call.data
-
-    if data == "lead_vip":
-        # registra lead nos logs
+    if call.data == "lead_vip":
         registrar_lead(call.from_user)
-
-        texto = (
-            "🎯 *Acesso a Bônus e Grupo VIP*\n\n"
-            "Você demonstrou interesse em receber orientação profissional, "
-            "acesso a bônus e participar do grupo VIP.\n\n"
-            "Use os botões abaixo para avançar:"
-        )
-        bot.edit_message_text(
-            texto,
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            parse_mode="Markdown",
-            reply_markup=menu_conversao()
+        markup = types.InlineKeyboardMarkup()
+        btn = types.InlineKeyboardButton("🎁 Entrar no Grupo VIP", url="https://t.me/werickyredpop")
+        markup.add(btn)
+        bot.send_message(
+            call.message.chat.id,
+            "🎯 Acesso a Bônus e Grupo VIP com suporte direto.\n\n"
+            "👉 Clique abaixo e entre agora:",
+            reply_markup=markup
         )
 
-    elif data == "info":
-        texto = (
-            "ℹ *Informações sobre a Rede Pop*\n\n"
-            "A Rede Pop é uma plataforma de entretenimento digital com sistema "
-            "de bônus, campanhas e diversas oportunidades diárias.\n\n"
-            "Para começar com orientação e segurança, utilize as opções abaixo:"
-        )
-        bot.edit_message_text(
-            texto,
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            parse_mode="Markdown",
-            reply_markup=menu_conversao()
+    elif call.data == "info":
+        bot.send_message(
+            call.message.chat.id,
+            "📊 *Informações sobre a Rede Pop:*\n\n"
+            "A Rede Pop é uma plataforma moderna de entretenimento digital, "
+            "com suporte personalizado e sistema de bônus exclusivo.\n\n"
+            "🎁 Quer começar agora e garantir o bônus de boas-vindas?\n"
+            "Use o botão abaixo para acessar:",
+            parse_mode="Markdown"
         )
 
-    elif data == "voltar_inicio":
-        bot.edit_message_text(
-            "Selecione uma opção para continuar 👇",
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            reply_markup=menu_inicial()
-        )
-
-
-# ========= FLASK + THREAD PARA RENDER ========= #
-
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Bot Rede Pop Info - OK"
-
-def iniciar_bot():
-    print("Iniciando bot Telegram (polling)...")
-    bot.infinity_polling(skip_pending=True)
-
-if __name__ == "__main__":
-    # inicia o bot em uma thread
-    t = threading.Thread(target=iniciar_bot, daemon=True)
-    t.start()
-
-    # inicia servidor web para o Render
-    port = int(os.environ.get("PORT", 10000))
-    print(f"Servidor Flask rodando na porta {port}...")
-    app.run(host="0.0.0.0", port=port)
+# Mantém o bot ativo
+bot.polling(none_stop=True)
