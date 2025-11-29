@@ -1,4 +1,4 @@
-# === REDE POP INFO BOT 2.1 ===
+# === REDE POP INFO BOT 2.2 ===
 # Wericky DK - Agente da Rede Pop
 
 import os
@@ -13,6 +13,9 @@ from telebot import types
 
 # Token do bot (vem das variáveis de ambiente do Render)
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
+
+if not BOT_TOKEN:
+    print("ERRO: BOT_TOKEN não definido nas variáveis de ambiente!")
 
 # Seu ID para receber os leads e abrir o PV no botão de contato
 ADMIN_ID = 8586126783  # Wericky DK
@@ -33,15 +36,20 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 def criar_menu_principal():
     markup = types.InlineKeyboardMarkup()
-    btn1 = types.InlineKeyboardButton("🎯 Quero bônus e acesso VIP", callback_data="lead_vip")
-    btn2 = types.InlineKeyboardButton("ℹ️ Informações sobre a Rede Pop e POPVAI", callback_data="info")
+
+    btn1 = types.InlineKeyboardButton("🎯 Quero bônus e acesso VIP",
+                                      callback_data="lead_vip")
+    btn2 = types.InlineKeyboardButton("ℹ️ Informações sobre a Rede Pop e POPVAI",
+                                      callback_data="info")
     # botão que abre seu PV direto
     btn3 = types.InlineKeyboardButton(
         "👨‍💼 Falar com o Agente da Rede Pop",
         url=f"tg://user?id={ADMIN_ID}"
     )
-    btn4 = types.InlineKeyboardButton("🎰 Jogar agora na POPVAI", url=LINK_POPVAI)
+    btn4 = types.InlineKeyboardButton("🎰 Jogar agora na POPVAI",
+                                      url=LINK_POPVAI)
 
+    # organiza em linhas
     markup.add(btn1)
     markup.add(btn2)
     markup.add(btn3)
@@ -89,7 +97,9 @@ def enviar_menu_inicial(chat_id):
         "Selecione uma opção abaixo para continuar 👇"
     )
 
-    bot.send_message(chat_id, texto, parse_mode="Markdown", reply_markup=criar_menu_principal())
+    bot.send_message(chat_id, texto,
+                     parse_mode="Markdown",
+                     reply_markup=criar_menu_principal())
 
 
 # ===== COMANDO /START =====
@@ -115,67 +125,72 @@ def send_welcome(message):
 def callback_query(call):
     chat_id = call.message.chat.id
 
-    if call.data == "lead_vip":
-        # Registrar lead com data e horário
-        registrar_lead(call.from_user)
+    try:
+        if call.data == "lead_vip":
+            # Registrar lead com data e horário
+            registrar_lead(call.from_user)
 
-        markup = types.InlineKeyboardMarkup()
-        btn_vip = types.inline_keyboard_button.InlineKeyboardButton(
-            "🎁 Entrar no Grupo VIP", url=GROUP_VIP_LINK
-        )
-        btn_play = types.inline_keyboard_button.InlineKeyboardButton(
-            "🎰 Jogar agora na POPVAI", url=LINK_POPVAI
-        )
-        btn_back = types.inline_keyboard_button.InlineKeyboardButton(
-            "⬅️ Voltar ao menu inicial", callback_data="menu"
-        )
+            markup = types.InlineKeyboardMarkup()
+            btn_vip = types.InlineKeyboardButton(
+                "🎁 Entrar no Grupo VIP", url=GROUP_VIP_LINK
+            )
+            btn_play = types.InlineKeyboardButton(
+                "🎰 Jogar agora na POPVAI", url=LINK_POPVAI
+            )
+            btn_back = types.InlineKeyboardButton(
+                "⬅️ Voltar ao menu inicial", callback_data="menu"
+            )
 
-        markup.add(btn_vip)
-        markup.add(btn_play)
-        markup.add(btn_back)
+            markup.add(btn_vip)
+            markup.add(btn_play)
+            markup.add(btn_back)
 
-        bot.send_message(
-            chat_id,
-            "🎯 *Acesso a Bônus e Grupo VIP com suporte direto!*\n\n"
-            "👉 Entre no grupo VIP para falar com o Agente Wericky DK, tirar dúvidas "
-            "e receber orientações de bônus.\n\n"
-            "Você também pode clicar para *jogar agora na POPVAI* 👇",
-            parse_mode="Markdown",
-            reply_markup=markup
-        )
+            bot.send_message(
+                chat_id,
+                "🎯 *Acesso a Bônus e Grupo VIP com suporte direto!*\n\n"
+                "👉 Entre no grupo VIP para falar com o Agente Wericky DK, tirar dúvidas "
+                "e receber orientações de bônus.\n\n"
+                "Você também pode clicar para *jogar agora na POPVAI* 👇",
+                parse_mode="Markdown",
+                reply_markup=markup
+            )
 
-    elif call.data == "info":
-        markup = types.InlineKeyboardMarkup()
-        btn_play = types.inline_keyboard_button.InlineKeyboardButton(
-            "🎰 Jogar agora na POPVAI", url=LINK_POPVAI
-        )
-        btn_back = types.inline_keyboard_button.InlineKeyboardButton(
-            "⬅️ Voltar ao menu inicial", callback_data="menu"
-        )
-        markup.add(btn_play)
-        markup.add(btn_back)
+        elif call.data == "info":
+            markup = types.InlineKeyboardMarkup()
+            btn_play = types.InlineKeyboardButton(
+                "🎰 Jogar agora na POPVAI", url=LINK_POPVAI
+            )
+            btn_back = types.InlineKeyboardButton(
+                "⬅️ Voltar ao menu inicial", callback_data="menu"
+            )
+            markup.add(btn_play)
+            markup.add(btn_back)
 
-        bot.send_message(
-            chat_id,
-            "ℹ️ *Sobre a Rede Pop e a POPVAI*\n\n"
-            "A *Rede Pop* é uma rede de plataformas de entretenimento online, focada em "
-            "jogos rápidos, bônus atrativos e suporte próximo ao jogador.\n\n"
-            "A plataforma *POPVAI* é uma das casas da Rede Pop, onde você pode:\n"
-            "• Jogar com depósitos a partir de pequenos valores\n"
-            "• Participar de promoções e campanhas especiais\n"
-            "• Contar com a orientação do *Agente Wericky DK* para organizar banca, "
-            "entender bônus e tirar dúvidas.\n\n"
-            "🎰 Para jogar pela POPVAI e já entrar com o link correto, use o botão abaixo 👇",
-            parse_mode="Markdown",
-            reply_markup=markup
-        )
+            bot.send_message(
+                chat_id,
+                "ℹ️ *Sobre a Rede Pop e a POPVAI*\n\n"
+                "A *Rede Pop* é uma rede de plataformas de entretenimento online, focada em "
+                "jogos rápidos, bônus atrativos e suporte próximo ao jogador.\n\n"
+                "A plataforma *POPVAI* é uma das casas da Rede Pop, onde você pode:\n"
+                "• Jogar com depósitos a partir de pequenos valores\n"
+                "• Participar de promoções e campanhas especiais\n"
+                "• Contar com a orientação do *Agente Wericky DK* para organizar banca, "
+                "entender bônus e tirar dúvidas.\n\n"
+                "🎰 Para jogar pela POPVAI e já entrar com o link correto, use o botão abaixo 👇",
+                parse_mode="Markdown",
+                reply_markup=markup
+            )
 
-    elif call.data == "menu":
-        # Voltar ao menu inicial
-        enviar_menu_inicial(chat_id)
+        elif call.data == "menu":
+            # Voltar ao menu inicial
+            enviar_menu_inicial(chat_id)
 
-    else:
-        # Qualquer callback desconhecido só responde com menu
+        else:
+            # Qualquer callback desconhecido -> manda menu
+            enviar_menu_inicial(chat_id)
+
+    except Exception as e:
+        print(f"[CALLBACK ERRO] {e}")
         enviar_menu_inicial(chat_id)
 
 
