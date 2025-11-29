@@ -1,4 +1,4 @@
-# === REDE POP INFO BOT 2.4 ===
+# === REDE POP INFO BOT 2.5 (CONTADOR) ===
 # Wericky DK - Agente da Rede Pop
 
 import os
@@ -30,6 +30,17 @@ LINK_POPVAI = "https://11popvai.com/?pid=3291819190"
 GROUP_VIP_LINK = "https://t.me/werickyredpop"
 
 bot = telebot.TeleBot(BOT_TOKEN)
+
+# ===== CONTADORES EM MEMÓRIA =====
+TOTAL_STARTS = 0
+TOTAL_LEADS = 0
+USUARIOS_LEAD = set()
+
+TOTAL_INFO_MENU = 0
+TOTAL_INFO_POPVAI = 0
+TOTAL_INFO_BONUS = 0
+TOTAL_INFO_FAQ = 0
+TOTAL_LANCAMENTO_POPVAI = 0
 
 
 # ===== FUNÇÃO PARA CRIAR MENU PRINCIPAL =====
@@ -72,10 +83,16 @@ def criar_menu_principal():
 # ===== FUNÇÃO PARA REGISTRAR LEAD =====
 
 def registrar_lead(user):
+    global TOTAL_LEADS, USUARIOS_LEAD
+
     nome = user.first_name or "Sem nome"
     username = user.username or "sem_username"
     user_id = user.id
     data_hora = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    # Contadores
+    TOTAL_LEADS += 1
+    USUARIOS_LEAD.add(user_id)
 
     texto = (
         "📥 *NOVO LEAD REDE POP*\n\n"
@@ -120,7 +137,10 @@ def enviar_menu_inicial(chat_id):
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
+    global TOTAL_STARTS
+
     chat_id = message.chat.id
+    TOTAL_STARTS += 1  # Contador de /start
 
     # 1) Enviar banner
     try:
@@ -133,10 +153,42 @@ def send_welcome(message):
     enviar_menu_inicial(chat_id)
 
 
+# ===== COMANDO /STATS (APENAS ADMIN) =====
+
+@bot.message_handler(commands=['stats'])
+def stats(message):
+    if message.from_user.id != ADMIN_ID:
+        return  # Ignora se não for o admin
+
+    texto = (
+        "📊 *ESTATÍSTICAS DO BOT REDE POP INFO*\n\n"
+        f"▶️ *Inícios (/start):* {TOTAL_STARTS}\n\n"
+        f"🎯 *Cliques em \"Quero bônus e acesso VIP\":*\n"
+        f"   • Total de cliques: {TOTAL_LEADS}\n"
+        f"   • Leads únicos: {len(USUARIOS_LEAD)}\n\n"
+        f"ℹ️ *Informações acessadas:*\n"
+        f"   • Menu de informações aberto: {TOTAL_INFO_MENU}\n"
+        f"   • Tela \"Como funciona a POPVAI\": {TOTAL_INFO_POPVAI}\n"
+        f"   • Tela \"Bônus e Grupo VIP\": {TOTAL_INFO_BONUS}\n"
+        f"   • FAQ aberta: {TOTAL_INFO_FAQ}\n\n"
+        f"🚀 *Lançamento POPVAI aberto:* {TOTAL_LANCAMENTO_POPVAI} vezes\n\n"
+        "_Obs: esses contadores são em memória e zeram se o bot for reiniciado._"
+    )
+
+    bot.send_message(
+        message.chat.id,
+        texto,
+        parse_mode="Markdown"
+    )
+
+
 # ===== TELAS DE INFORMAÇÃO =====
 
 def enviar_menu_info(chat_id):
     """Mini-menu de informações (Rede Pop / PopVai / Bônus / FAQ)."""
+    global TOTAL_INFO_MENU
+    TOTAL_INFO_MENU += 1
+
     texto = (
         "ℹ️ *Informações sobre a Rede Pop e POPVAI*\n\n"
         "Escolha o que você quer saber:\n"
@@ -210,6 +262,9 @@ def enviar_info_redepop(chat_id):
 
 
 def enviar_info_popvai(chat_id):
+    global TOTAL_INFO_POPVAI
+    TOTAL_INFO_POPVAI += 1
+
     texto = (
         "🎰 *Como funciona a POPVAI?*\n\n"
         "A *POPVAI* é uma das plataformas da Rede Pop, focada em:\n"
@@ -249,6 +304,9 @@ def enviar_info_popvai(chat_id):
 
 
 def enviar_info_bonus(chat_id):
+    global TOTAL_INFO_BONUS
+    TOTAL_INFO_BONUS += 1
+
     texto = (
         "🎁 *Bônus e Grupo VIP da Rede Pop*\n\n"
         "No *Grupo VIP* com o Agente *Wericky DK* você pode:\n"
@@ -286,6 +344,9 @@ def enviar_info_bonus(chat_id):
 
 
 def enviar_faq(chat_id):
+    global TOTAL_INFO_FAQ
+    TOTAL_INFO_FAQ += 1
+
     texto = (
         "❓ *Perguntas frequentes (FAQ)*\n\n"
         "🔹 *1. Qual o depósito mínimo?*\n"
@@ -330,9 +391,12 @@ def enviar_faq(chat_id):
     )
 
 
-# ===== TELA ESPECIAL — LANÇAMENTO POPVAI =====
+# ===== TELA — LANÇAMENTO POPVAI =====
 
 def enviar_popvai_lancamento(chat_id):
+    global TOTAL_LANCAMENTO_POPVAI
+    TOTAL_LANCAMENTO_POPVAI += 1
+
     texto = (
         "🚀 *LANÇAMENTO OFICIAL POPVAI* 🚀\n\n"
         "A *POPVAI* é a nova plataforma da *Rede Pop*, pensada para quem quer:\n"
@@ -383,7 +447,7 @@ def callback_query(call):
 
     try:
         if call.data == "lead_vip":
-            # Registrar lead com data e horário
+            # Registrar lead com data e horário + contador
             registrar_lead(call.from_user)
 
             markup = types.InlineKeyboardMarkup()
