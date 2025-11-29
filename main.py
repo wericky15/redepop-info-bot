@@ -1,18 +1,43 @@
 import telebot
 from telebot import types
 import os
+from datetime import datetime
 
+# === CONFIGURAÇÃO DO BOT ===
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
+
+# === SEU ID (Wericky DK) ===
+ADMIN_ID = 8586126783  # Seu ID do Telegram para receber os leads
+
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Função para registrar leads no log
-def registrar_lead(user):
-    username = user.username or ""
-    first_name = user.first_name or ""
-    user_id = user.id
-    print(f"[LEAD] Novo jogador interessado: {first_name} (@{username}) id={user_id}")
 
-# Comando /start
+# === FUNÇÃO DE REGISTRO DE LEAD ===
+def registrar_lead(user):
+    nome = user.first_name or ""
+    username = user.username or ""
+    user_id = user.id
+    data = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    texto = (
+        "📥 *NOVO LEAD REDE POP*\n\n"
+        f"👤 *Nome:* {nome}\n"
+        f"📛 *Username:* @{username if username else 'sem username'}\n"
+        f"🆔 *ID:* {user_id}\n"
+        f"⏰ *Data:* {data}"
+    )
+
+    # Log no Render
+    print(f"[LEAD] {nome} | @{username} | {user_id} | {data}")
+
+    # Enviar mensagem para você (admin)
+    try:
+        bot.send_message(ADMIN_ID, texto, parse_mode="Markdown")
+    except Exception as e:
+        print(f"[LEAD] Erro ao enviar lead para o admin: {e}")
+
+
+# === COMANDO /START ===
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     markup = types.InlineKeyboardMarkup()
@@ -25,17 +50,18 @@ def send_welcome(message):
 
     texto = (
         "👋 Olá, tudo bem?\n\n"
-        "Sou o *Bot Oficial de Informações da Rede Pop*, gerenciado por *Wericky DK (Agente Oficial da Rede Pop)*.\n\n"
+        "Sou o *Bot Oficial de Informações da Rede Pop*, gerenciado por "
+        "*Wericky DK (Agente Oficial da Rede Pop)*.\n\n"
         "Aqui você pode:\n"
         "• Entender como a plataforma funciona\n"
         "• Solicitar orientação profissional\n"
         "• Ter acesso a bônus e grupo VIP com suporte direto\n\n"
         "Selecione uma opção abaixo para continuar 👇"
     )
-
     bot.send_message(message.chat.id, texto, parse_mode="Markdown", reply_markup=markup)
 
-# Respostas aos botões
+
+# === CALLBACKS DOS BOTÕES ===
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     if call.data == "lead_vip":
@@ -61,5 +87,7 @@ def callback_query(call):
             parse_mode="Markdown"
         )
 
-# Mantém o bot ativo
+
+# === LOOP PRINCIPAL ===
 bot.polling(none_stop=True)
+
