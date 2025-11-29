@@ -17,8 +17,8 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 # Seu ID para receber os leads
 ADMIN_ID = 8586126783  # Wericky DK
 
-# Nome do arquivo do banner que você subiu no GitHub
-BANNER_PATH = "ChatGPT image 28 de nov. de 2025 21_48_31.png"
+# Nome do arquivo do banner que você renomeou no GitHub
+BANNER_PATH = "banner.png"
 
 # Link da plataforma POPVAI
 LINK_POPVAI = "https://11popvai.com/?pid=3291819190"
@@ -27,6 +27,7 @@ LINK_POPVAI = "https://11popvai.com/?pid=3291819190"
 LINK_CONTATO = "https://t.me/werickyredpop"
 
 bot = telebot.TeleBot(BOT_TOKEN)
+
 
 # ===== FUNÇÃO PARA REGISTRAR LEAD =====
 
@@ -76,12 +77,9 @@ def send_welcome(message):
     btn3 = types.InlineKeyboardButton("👨‍💼 Falar com o Agente da Rede Pop", url=LINK_CONTATO)
     btn4 = types.InlineKeyboardButton("🎰 Jogar agora na POPVAI", url=LINK_POPVAI)
 
-    # primeira linha: bônus + info
     markup.add(btn1)
     markup.add(btn2)
-    # segunda linha: falar com agente
     markup.add(btn3)
-    # terceira linha: jogar agora
     markup.add(btn4)
 
     # 3) Mensagem de boas-vindas
