@@ -1,4 +1,5 @@
-# === REDE POP INFO BOT 3.2 (CONVERSÃO + FOLLOW-UP 24H + INDICAÇÕES) ===
+# === REDE POP INFO BOT 3.4 (CTA FORTES EM TODAS AS ABAS) ===
+# Conversão + Follow-up 24H + Indicações + CTAs criativas
 # Wericky DK - Agente da Rede Pop
 
 import os
@@ -30,7 +31,7 @@ BASE_LINK_POPVAI = "https://11popvai.com/?pid=3291819190"
 # Link do grupo VIP (o seu grupo no Telegram)
 GROUP_VIP_LINK = "https://t.me/werickyredpop"
 
-# Username do bot (sem @) – JÁ AJUSTADO
+# Username do bot (sem @) – AJUSTADO PARA O SEU BOT
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "RedePop_Info_bot")
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -81,7 +82,12 @@ def gerar_link_popvai(user_id=None, origem="default"):
             f"&utm_userid={user_id}"
         )
     else:
-        return BASE_LINK_POPVAI
+        return (
+            f"{BASE_LINK_POPVAI}"
+            f"&utm_source=bot_redepop"
+            f"&utm_medium=telegram"
+            f"&utm_campaign={origem}"
+        )
 
 
 # ===== FUNÇÃO PARA GERAR LINK DE INDICAÇÃO DO BOT =====
@@ -89,7 +95,7 @@ def gerar_link_popvai(user_id=None, origem="default"):
 def gerar_link_indicacao(user_id):
     """
     Gera o link t.me do bot com parâmetro de indicação.
-    Ex: https://t.me/SeuBot?start=ref_123456
+    Ex: https://t.me/RedePop_Info_bot?start=ref_123456
     """
     return f"https://t.me/{BOT_USERNAME}?start=ref_{user_id}"
 
@@ -115,7 +121,6 @@ def criar_menu_principal(user_id=None):
         "👥 Indicar amigos",
         callback_data="indicar"
     )
-    # botão que abre seu PV direto
     btn4 = types.InlineKeyboardButton(
         "👨‍💼 Falar com o Agente da Rede Pop",
         url=f"tg://user?id={ADMIN_ID}"
@@ -125,7 +130,6 @@ def criar_menu_principal(user_id=None):
         url=gerar_link_popvai(user_id, origem="menu_principal")
     )
 
-    # organiza em linhas
     markup.add(btn1)
     markup.add(btn2)
     markup.add(btn3)
@@ -147,15 +151,12 @@ def registrar_lead(user):
     data_hora = datetime.now().strftime("%d/%m/%Y %H:%M")
     agora = datetime.now()
 
-    # Contadores
     TOTAL_LEADS += 1
     USUARIOS_LEAD.add(user_id)
 
-    # Diminuir vagas VIP mas nunca abaixo do mínimo
     if VAGAS_VIP_ATUAIS > VAGAS_VIP_MINIMO:
         VAGAS_VIP_ATUAIS -= 1
 
-    # Registrar lead para follow-up
     if user_id not in LEADS_DATA:
         LEADS_DATA[user_id] = {
             "nome": nome,
@@ -163,7 +164,6 @@ def registrar_lead(user):
             "followup_enviado": False
         }
     else:
-        # Se já existe, não mexe no primeiro_lead, só garante nome
         LEADS_DATA[user_id]["nome"] = nome
 
     texto_admin = (
@@ -196,7 +196,9 @@ def enviar_menu_inicial(chat_id, user_id=None):
         "• Entender como a plataforma funciona\n"
         "• Solicitar orientação profissional\n"
         "• Ter acesso a bônus e grupo VIP com suporte direto\n\n"
-        "Selecione uma opção abaixo para continuar 👇"
+        "Se quiser ir direto pro jogo, é só clicar em *\"🎰 Jogar agora na POPVAI\"* "
+        "no menu abaixo.\n\n"
+        "Selecione uma opção para continuar 👇"
     )
 
     bot.send_message(
@@ -215,9 +217,9 @@ def send_welcome(message):
 
     chat_id = message.chat.id
     user_id = message.from_user.id
-    TOTAL_STARTS += 1  # Contador de /start
+    TOTAL_STARTS += 1
 
-    # Verificar se veio com parâmetro de indicação
+    # Param de indicação
     try:
         texto_msg = message.text or ""
         partes = texto_msg.split()
@@ -228,18 +230,16 @@ def send_welcome(message):
                 if ref_str.isdigit():
                     referrer_id = int(ref_str)
                     if referrer_id != user_id:
-                        # Registrar indicação apenas se ainda não tiver
                         if user_id not in INDICADO_POR:
                             INDICADO_POR[user_id] = referrer_id
                             if referrer_id not in REF_INDICACOES:
                                 REF_INDICACOES[referrer_id] = set()
                             REF_INDICACOES[referrer_id].add(user_id)
 
-                            # Mensagem para o admin sobre indicação
                             try:
                                 bot.send_message(
                                     ADMIN_ID,
-                                    f"👥 *Nova indicação registrada!*\n\n"
+                                    "👥 *Nova indicação registrada!*\n\n"
                                     f"👤 Indicado: `{user_id}`\n"
                                     f"🔗 Indicador: `{referrer_id}`",
                                     parse_mode="Markdown"
@@ -247,7 +247,6 @@ def send_welcome(message):
                             except Exception as e:
                                 print(f"[INDICAÇÃO ADMIN ERRO] {e}")
 
-                            # Avisar o indicador que alguém entrou pelo link dele
                             try:
                                 bot.send_message(
                                     referrer_id,
@@ -260,14 +259,13 @@ def send_welcome(message):
     except Exception as e:
         print(f"[PARSE START PARAM ERRO] {e}")
 
-    # 1) Enviar banner
+    # Banner
     try:
         with open(BANNER_PATH, "rb") as banner:
             bot.send_photo(chat_id, banner)
     except Exception as e:
         print(f"[BANNER] Erro ao enviar banner: {e}")
 
-    # 2) Mensagem + menu
     enviar_menu_inicial(chat_id, user_id)
 
 
@@ -276,9 +274,8 @@ def send_welcome(message):
 @bot.message_handler(commands=['stats'])
 def stats(message):
     if message.from_user.id != ADMIN_ID:
-        return  # Ignora se não for o admin
+        return
 
-    # Estatísticas de indicação
     total_indicadores = len(REF_INDICACOES)
     total_indicados = sum(len(v) for v in REF_INDICACOES.values())
 
@@ -303,17 +300,12 @@ def stats(message):
         "e zeram se o bot for reiniciado._"
     )
 
-    bot.send_message(
-        message.chat.id,
-        texto,
-        parse_mode="Markdown"
-    )
+    bot.send_message(message.chat.id, texto, parse_mode="Markdown")
 
 
 # ===== TELAS DE INFORMAÇÃO =====
 
 def enviar_menu_info(chat_id):
-    """Mini-menu de informações (Rede Pop / PopVai / Bônus / FAQ)."""
     global TOTAL_INFO_MENU
     TOTAL_INFO_MENU += 1
 
@@ -324,6 +316,8 @@ def enviar_menu_info(chat_id):
         "• Como funciona a POPVAI\n"
         "• Bônus e Grupo VIP\n"
         "• Perguntas frequentes (FAQ)\n\n"
+        "💡 Se você já quer pular direto pro jogo, pode clicar em "
+        "*\"🎰 Jogar agora na POPVAI\"* abaixo e depois voltar aqui quando tiver dúvidas.\n\n"
         "Clique em uma das opções abaixo 👇"
     )
 
@@ -340,6 +334,10 @@ def enviar_menu_info(chat_id):
     btn_faq = types.InlineKeyboardButton(
         "❓ Perguntas frequentes (FAQ)", callback_data="faq"
     )
+    btn_play = types.InlineKeyboardButton(
+        "🎰 Jogar agora na POPVAI",
+        url=gerar_link_popvai(None, origem="menu_info")
+    )
     btn_back = types.InlineKeyboardButton(
         "⬅️ Voltar ao menu inicial", callback_data="menu"
     )
@@ -348,14 +346,10 @@ def enviar_menu_info(chat_id):
     markup.add(btn_popvai)
     markup.add(btn_bonus)
     markup.add(btn_faq)
+    markup.add(btn_play)
     markup.add(btn_back)
 
-    bot.send_message(
-        chat_id,
-        texto,
-        parse_mode="Markdown",
-        reply_markup=markup
-    )
+    bot.send_message(chat_id, texto, parse_mode="Markdown", reply_markup=markup)
 
 
 def enviar_info_redepop(chat_id):
@@ -367,26 +361,28 @@ def enviar_info_redepop(chat_id):
         "• Trazer plataformas confiáveis para o jogador\n"
         "• Oferecer promoções frequentes\n"
         "• Ter suporte próximo através de agentes oficiais, como o *Wericky DK*.\n\n"
-        "Sempre utilize links oficiais indicados pelo agente para garantir "
-        "que você está entrando na plataforma correta. ✅"
+        "💥 Quer ver tudo isso na prática?\n"
+        "Clique em *\"🎰 Jogar agora na POPVAI\"* abaixo e já entra pela plataforma "
+        "oficial da Rede Pop.\n"
+        "Depois, se quiser, volta aqui no bot para tirar dúvidas. ✅"
     )
 
     markup = types.InlineKeyboardMarkup()
+    btn_play = types.InlineKeyboardButton(
+        "🎰 Jogar agora na POPVAI",
+        url=gerar_link_popvai(None, origem="info_redepop")
+    )
     btn_back_info = types.InlineKeyboardButton(
         "⬅️ Voltar às informações", callback_data="info"
     )
     btn_back_menu = types.InlineKeyboardButton(
         "🏠 Voltar ao menu inicial", callback_data="menu"
     )
+    markup.add(btn_play)
     markup.add(btn_back_info)
     markup.add(btn_back_menu)
 
-    bot.send_message(
-        chat_id,
-        texto,
-        parse_mode="Markdown",
-        reply_markup=markup
-    )
+    bot.send_message(chat_id, texto, parse_mode="Markdown", reply_markup=markup)
 
 
 def enviar_info_popvai(chat_id, user_id=None):
@@ -405,7 +401,9 @@ def enviar_info_popvai(chat_id, user_id=None):
         "• Orientação para organizar banca\n"
         "• Dicas de como aproveitar melhor os bônus\n"
         "• Suporte quando tiver dúvidas.\n\n"
-        "Para entrar corretamente na POPVAI use sempre o link abaixo 👇"
+        "💥 Quer começar agora?\n"
+        "Use o botão abaixo para entrar direto na *POPVAI oficial* com o link certo "
+        "e depois fala comigo no VIP pra eu te orientar. 👇"
     )
 
     markup = types.InlineKeyboardMarkup()
@@ -424,12 +422,7 @@ def enviar_info_popvai(chat_id, user_id=None):
     markup.add(btn_back_info)
     markup.add(btn_back_menu)
 
-    bot.send_message(
-        chat_id,
-        texto,
-        parse_mode="Markdown",
-        reply_markup=markup
-    )
+    bot.send_message(chat_id, texto, parse_mode="Markdown", reply_markup=markup)
 
 
 def enviar_info_bonus(chat_id, user_id=None):
@@ -446,7 +439,8 @@ def enviar_info_bonus(chat_id, user_id=None):
         "1️⃣ Você entra em uma plataforma oficial da Rede Pop (como a POPVAI);\n"
         "2️⃣ Fala com o agente para entender a melhor forma de depositar;\n"
         "3️⃣ Recebe orientações sobre bônus, metas e controle de banca.\n\n"
-        "Entre no Grupo VIP para ser atendido diretamente 👇"
+        "💥 Se quiser, já pode entrar agora na POPVAI pelo botão abaixo e depois "
+        "chamar no Grupo VIP pra eu te orientar da melhor forma. 👇"
     )
 
     markup = types.InlineKeyboardMarkup()
@@ -469,12 +463,7 @@ def enviar_info_bonus(chat_id, user_id=None):
     markup.add(btn_back_info)
     markup.add(btn_back_menu)
 
-    bot.send_message(
-        chat_id,
-        texto,
-        parse_mode="Markdown",
-        reply_markup=markup
-    )
+    bot.send_message(chat_id, texto, parse_mode="Markdown", reply_markup=markup)
 
 
 def enviar_faq(chat_id):
@@ -495,7 +484,8 @@ def enviar_faq(chat_id):
         "🔹 *4. Bônus é garantia de ganhar?*\n"
         "Não. Bônus ajuda a aumentar o tempo de jogo e as chances de rodadas, "
         "mas não garante lucro. Jogue sempre com responsabilidade.\n\n"
-        "Se ainda ficou alguma dúvida, fale com o agente ou entre no Grupo VIP 👇"
+        "💥 Se você já entendeu o básico e quer testar na prática, pode clicar em "
+        "*\"🎰 Jogar agora na POPVAI\"* abaixo pra entrar direto na plataforma oficial. 👇"
     )
 
     markup = types.InlineKeyboardMarkup()
@@ -504,6 +494,10 @@ def enviar_faq(chat_id):
     )
     btn_agent = types.InlineKeyboardButton(
         "👨‍💼 Falar com o Agente", url=f"tg://user?id={ADMIN_ID}"
+    )
+    btn_play = types.InlineKeyboardButton(
+        "🎰 Jogar agora na POPVAI",
+        url=gerar_link_popvai(None, origem="faq")
     )
     btn_back_info = types.InlineKeyboardButton(
         "⬅️ Voltar às informações", callback_data="info"
@@ -514,15 +508,11 @@ def enviar_faq(chat_id):
 
     markup.add(btn_vip)
     markup.add(btn_agent)
+    markup.add(btn_play)
     markup.add(btn_back_info)
     markup.add(btn_back_menu)
 
-    bot.send_message(
-        chat_id,
-        texto,
-        parse_mode="Markdown",
-        reply_markup=markup
-    )
+    bot.send_message(chat_id, texto, parse_mode="Markdown", reply_markup=markup)
 
 
 # ===== TELA — LANÇAMENTO POPVAI =====
@@ -546,7 +536,8 @@ def enviar_popvai_lancamento(chat_id, user_id=None):
         f"• Vagas VIP disponíveis hoje: *{VAGAS_VIP_ATUAIS}*\n\n"
         "⚠️ Não existe garantia de lucro. Jogue sempre com responsabilidade "
         "e apenas com o que não vai te fazer falta.\n\n"
-        "Clique abaixo para entrar pela *POPVAI oficial* e depois fale com o agente 👇"
+        "💥 Se você quer aproveitar o momento de lançamento, clique abaixo e "
+        "entra direto pela *POPVAI oficial* com o link certo. 👇"
     )
 
     markup = types.InlineKeyboardMarkup()
@@ -569,17 +560,12 @@ def enviar_popvai_lancamento(chat_id, user_id=None):
     markup.add(btn_vip)
     markup.add(btn_back_menu)
 
-    bot.send_message(
-        chat_id,
-        texto,
-        parse_mode="Markdown",
-        reply_markup=markup
-    )
+    bot.send_message(chat_id, texto, parse_mode="Markdown", reply_markup=markup)
 
 
-# ===== TELA — INDICAR AMIGOS =====
+# ===== TELA — INDICAR AMIGOS (PV) =====
 
-def enviar_indicacao(chat_id, user_id):
+def enviar_indicacao_pv(user_id):
     link_indicacao = gerar_link_indicacao(user_id)
     texto = (
         "👥 *Indicar amigos para a Rede Pop / POPVAI*\n\n"
@@ -596,18 +582,13 @@ def enviar_indicacao(chat_id, user_id):
     btn_link = types.InlineKeyboardButton(
         "📲 Abrir meu link de indicação", url=link_indicacao
     )
-    btn_back = types.InlineKeyboardButton(
-        "⬅️ Voltar ao menu inicial", callback_data="menu"
-    )
     markup.add(btn_link)
-    markup.add(btn_back)
 
-    bot.send_message(
-        chat_id,
-        texto,
-        parse_mode="Markdown",
-        reply_markup=markup
-    )
+    try:
+        bot.send_message(user_id, texto, parse_mode="Markdown", reply_markup=markup)
+        print(f"[INDICAÇÃO] Mensagem de indicação enviada para user_id={user_id}")
+    except Exception as e:
+        print(f"[INDICAÇÃO ERRO PV] user_id={user_id} -> {e}")
 
 
 # ===== CALLBACK DOS BOTÕES =====
@@ -620,10 +601,8 @@ def callback_query(call):
 
     try:
         if call.data == "lead_vip":
-            # Registrar lead com data e horário + contador + vagas + follow-up
             registrar_lead(user)
 
-            # Mensagem no chat (com prova social e FOMO)
             markup = types.InlineKeyboardMarkup()
             btn_vip = types.InlineKeyboardButton(
                 "🎁 Entrar no Grupo VIP", url=GROUP_VIP_LINK
@@ -647,12 +626,12 @@ def callback_query(call):
                 f"👥 *Pessoas que já solicitaram bônus pelo bot:* {TOTAL_LEADS}\n\n"
                 "👉 Entre no grupo VIP para falar com o Agente Wericky DK, tirar dúvidas "
                 "e receber orientações de bônus.\n\n"
-                "Você também pode clicar para *jogar agora na POPVAI* 👇",
+                "💥 Se ainda não tem conta, você também pode clicar em "
+                "*\"🎰 Jogar agora na POPVAI\"* para abrir a plataforma agora mesmo. 👇",
                 parse_mode="Markdown",
                 reply_markup=markup
             )
 
-            # Mensagem automática personalizada no PV do usuário (imediata)
             nome = user.first_name or "jogador"
             msg_pv = (
                 f"👋 *Fala, {nome}!* Aqui é o *Wericky DK*, Agente da Rede Pop.\n\n"
@@ -668,7 +647,6 @@ def callback_query(call):
                 print(f"[PV LEAD] Erro ao enviar mensagem automática para o usuário: {e}")
 
         elif call.data == "info":
-            # Abre o mini-menu de informações
             enviar_menu_info(chat_id)
 
         elif call.data == "info_redepop":
@@ -687,14 +665,19 @@ def callback_query(call):
             enviar_popvai_lancamento(chat_id, user_id)
 
         elif call.data == "indicar":
-            enviar_indicacao(chat_id, user_id)
+            enviar_indicacao_pv(user_id)
+            try:
+                bot.answer_callback_query(
+                    call.id,
+                    "Te enviei seu link de indicação no PV 😉"
+                )
+            except Exception:
+                pass
 
         elif call.data == "menu":
-            # Voltar ao menu inicial
             enviar_menu_inicial(chat_id, user_id)
 
         else:
-            # Qualquer callback desconhecido -> manda menu
             enviar_menu_inicial(chat_id, user_id)
 
     except Exception as e:
@@ -705,10 +688,6 @@ def callback_query(call):
 # ===== WORKER DE FOLLOW-UP (24H) =====
 
 def worker_followup():
-    """
-    Verifica periodicamente quais leads já têm mais de 24h
-    e ainda não receberam follow-up, e envia uma mensagem automática.
-    """
     global LEADS_DATA
 
     print("⏱ Worker de follow-up iniciado.")
@@ -738,8 +717,7 @@ def worker_followup():
                         print(f"[FOLLOW-UP] Enviado para user_id={user_id}")
                     except Exception as e:
                         print(f"[FOLLOW-UP ERRO] user_id={user_id} -> {e}")
-            # Dorme alguns minutos antes de checar de novo
-            time.sleep(600)  # 10 minutos
+            time.sleep(600)
         except Exception as e:
             print(f"[FOLLOW-UP WORKER ERRO GERAL] {e}")
             time.sleep(600)
@@ -760,16 +738,13 @@ def iniciar_bot():
 
 
 if __name__ == "__main__":
-    # Thread para o bot (Telegram)
     t_bot = threading.Thread(target=iniciar_bot)
     t_bot.daemon = True
     t_bot.start()
 
-    # Thread para follow-up automático
     t_followup = threading.Thread(target=worker_followup)
     t_followup.daemon = True
     t_followup.start()
 
-    # Servidor web para o Render
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
