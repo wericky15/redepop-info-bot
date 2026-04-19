@@ -1,4 +1,4 @@
-# === REDE POP BOT FINAL (PRONTO PRA GITHUB/RENDER) ===
+# === REDE POP BOT 7.0 (LEADS + COMPLETO) ===
 
 import os
 import threading
@@ -12,6 +12,7 @@ from telebot import types
 
 # ===== CONFIG =====
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
+ADMIN_ID = 8586126783
 ADMIN_LINK = "https://t.me/Whsantosz"
 BASE_LINK = "https://11poptig.com/?pid=1403904093"
 
@@ -29,7 +30,9 @@ cursor = conn.cursor()
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY,
-    date TEXT
+    date TEXT,
+    lead INTEGER DEFAULT 0,
+    afiliado INTEGER DEFAULT 0
 )
 """)
 conn.commit()
@@ -39,17 +42,25 @@ def salvar_usuario(user_id):
     cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
     if not cursor.fetchone():
         cursor.execute(
-            "INSERT INTO users VALUES (?, ?)",
+            "INSERT INTO users (user_id, date, lead, afiliado) VALUES (?, ?, 0, 0)",
             (user_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         )
         conn.commit()
+
+def marcar_lead(user_id):
+    cursor.execute("UPDATE users SET lead=1 WHERE user_id=?", (user_id,))
+    conn.commit()
+
+def marcar_afiliado(user_id):
+    cursor.execute("UPDATE users SET afiliado=1 WHERE user_id=?", (user_id,))
+    conn.commit()
 
 def gerar_link(user_id):
     return f"{BASE_LINK}&user={user_id}"
 
 def botoes(user_id):
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🎰 Entrar na POPTIG", url=gerar_link(user_id)))
+    markup.add(types.InlineKeyboardButton("🎰 Entrar na POPTIG", callback_data="click_entrar"))
     markup.add(types.InlineKeyboardButton("💬 Falar com agente", url=ADMIN_LINK))
     return markup
 
@@ -82,12 +93,24 @@ def start(msg):
 
     threading.Thread(target=funil, args=(user_id,)).start()
 
-# ===== BOTÕES =====
+# ===== CALLBACK =====
 @bot.callback_query_handler(func=lambda c: True)
 def cb(c):
     user_id = c.from_user.id
 
-    if c.data == "vip":
+    # CLIQUE ENTRAR (LEAD)
+    if c.data == "click_entrar":
+        marcar_lead(user_id)
+
+        bot.send_message(
+            user_id,
+            "🔥 Boa escolha!\n\nClique abaixo para acessar a plataforma:",
+            reply_markup=types.InlineKeyboardMarkup().add(
+                types.InlineKeyboardButton("🎰 ACESSAR POPTIG", url=gerar_link(user_id))
+            )
+        )
+
+    elif c.data == "vip":
         bot.send_message(
             user_id,
             "🎯 *BÔNUS VIP LIBERADO*\n\n"
@@ -112,6 +135,8 @@ def cb(c):
         )
 
     elif c.data == "indicar":
+        marcar_afiliado(user_id)
+
         bot.send_photo(
             user_id,
             IMG_INDICACAO,
@@ -142,6 +167,29 @@ def cb(c):
             parse_mode="Markdown",
             reply_markup=botoes(user_id)
         )
+
+# ===== COMANDO LEADS =====
+@bot.message_handler(commands=['leads'])
+def ver_leads(msg):
+    if msg.chat.id != ADMIN_ID:
+        return
+
+    cursor.execute("SELECT COUNT(*) FROM users")
+    total = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM users WHERE lead=1")
+    leads = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM users WHERE afiliado=1")
+    afiliados = cursor.fetchone()[0]
+
+    bot.send_message(
+        msg.chat.id,
+        f"📊 RELATÓRIO\n\n"
+        f"👥 Total: {total}\n"
+        f"🔥 Leads: {leads}\n"
+        f"💰 Afiliados: {afiliados}"
+    )
 
 # ===== FUNIL =====
 def funil(user_id):
