@@ -1,4 +1,4 @@
-# === REDE POP BOT 6.0 FINAL ===
+# === REDE POP BOT FINAL (PRONTO PRA GITHUB/RENDER) ===
 
 import os
 import threading
@@ -10,14 +10,12 @@ from flask import Flask
 import telebot
 from telebot import types
 
+# ===== CONFIG =====
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-ADMIN_ID = 8586126783
-BOT_USERNAME = "RedePop_Info_bot"  # ⚠️ CONFERE ISSO
-
 ADMIN_LINK = "https://t.me/Whsantosz"
 BASE_LINK = "https://11poptig.com/?pid=1403904093"
 
-# 🔥 IMAGENS
+# IMAGENS
 IMG_LANCAMENTO = "https://i.postimg.cc/vHktD7NC/IMG-20260418-215448-769.jpg"
 IMG_INDICACAO = "https://i.postimg.cc/bw0S8Qcy/IMG-20260419-034225-247.jpg"
 IMG_SALARIO = "https://i.postimg.cc/Zny0QNx4/IMG-20260419-034227-151.jpg"
@@ -31,59 +29,43 @@ cursor = conn.cursor()
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY,
-    ref_by INTEGER,
     date TEXT
 )
 """)
 conn.commit()
 
 # ===== FUNÇÕES =====
-def salvar_usuario(user_id, ref_by=None):
+def salvar_usuario(user_id):
     cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
     if not cursor.fetchone():
         cursor.execute(
-            "INSERT INTO users VALUES (?, ?, ?)",
-            (user_id, ref_by, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            "INSERT INTO users VALUES (?, ?)",
+            (user_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         )
         conn.commit()
 
 def gerar_link(user_id):
     return f"{BASE_LINK}&user={user_id}"
 
-def total_refs(user_id):
-    cursor.execute("SELECT COUNT(*) FROM users WHERE ref_by=?", (user_id,))
-    return cursor.fetchone()[0]
-
-def botao_principal(user_id):
+def botoes(user_id):
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🎰 Entrar na POPTIG", url=gerar_link(user_id)))
     markup.add(types.InlineKeyboardButton("💬 Falar com agente", url=ADMIN_LINK))
     return markup
 
-# ===== MENU =====
-def menu(user_id):
-    m = types.InlineKeyboardMarkup()
-    m.add(types.InlineKeyboardButton("🎯 Bônus VIP", callback_data="vip"))
-    m.add(types.InlineKeyboardButton("ℹ️ Informações", callback_data="info"))
-    m.add(types.InlineKeyboardButton("👥 Indicar amigos", callback_data="indicar"))
-    m.add(types.InlineKeyboardButton("💰 Salário semanal", callback_data="salario"))
-    return m
+def menu():
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🎯 Bônus VIP", callback_data="vip"))
+    markup.add(types.InlineKeyboardButton("ℹ️ Informações", callback_data="info"))
+    markup.add(types.InlineKeyboardButton("👥 Indicar amigos", callback_data="indicar"))
+    markup.add(types.InlineKeyboardButton("💰 Salário semanal", callback_data="salario"))
+    return markup
 
 # ===== START =====
 @bot.message_handler(commands=['start'])
 def start(msg):
     user_id = msg.from_user.id
-
-    ref = None
-    if len(msg.text.split()) > 1:
-        param = msg.text.split()[1]
-        if "ref_" in param:
-            try:
-                ref = int(param.replace("ref_", ""))
-            except:
-                pass
-
-    salvar_usuario(user_id, ref)
+    salvar_usuario(user_id)
 
     bot.send_photo(
         user_id,
@@ -95,12 +77,12 @@ def start(msg):
         "🎁 Bônus + VIP + estratégia\n\n"
         "⚡ Entre agora e saia na frente!",
         parse_mode="Markdown",
-        reply_markup=menu(user_id)
+        reply_markup=menu()
     )
 
     threading.Thread(target=funil, args=(user_id,)).start()
 
-# ===== CALLBACK =====
+# ===== BOTÕES =====
 @bot.callback_query_handler(func=lambda c: True)
 def cb(c):
     user_id = c.from_user.id
@@ -109,43 +91,40 @@ def cb(c):
         bot.send_message(
             user_id,
             "🎯 *BÔNUS VIP LIBERADO*\n\n"
-            "🔥 Você entrou no melhor momento\n\n"
             "👉 Cria sua conta e me chama\n"
             "Vou te passar estratégia pra começar forte\n\n"
-            "💰 Tem gente já lucrando no início",
+            "🔥 Aproveita o lançamento!",
             parse_mode="Markdown",
-            reply_markup=botao_principal(user_id)
+            reply_markup=botoes(user_id)
         )
 
     elif c.data == "info":
         bot.send_message(
             user_id,
             "ℹ️ *COMO FUNCIONA*\n\n"
-            "💰 Você ganha jogando\n"
-            "👥 Pode ganhar indicando\n\n"
+            "💰 Ganhos jogando\n"
+            "👥 Ganhos indicando\n\n"
             "📊 Depósito mínimo: R$10\n"
             "📊 Saque mínimo: R$20\n\n"
-            "🔥 Plataforma nova = mais oportunidade",
+            "🔥 Plataforma nova = oportunidade",
             parse_mode="Markdown",
-            reply_markup=botao_principal(user_id)
+            reply_markup=botoes(user_id)
         )
 
     elif c.data == "indicar":
-        link = f"https://t.me/{BOT_USERNAME}?start=ref_{user_id}"
-
         bot.send_photo(
             user_id,
             IMG_INDICACAO,
             caption=
-            "👥 *GANHE INDICANDO*\n\n"
+            "👥 *BÔNUS POR INDICAÇÃO* 👥\n\n"
             "💰 Até R$25 por pessoa\n\n"
-            "📋 Regras:\n"
-            "• Depósito mínimo: R$20\n"
-            "• Giro: R$200\n\n"
-            f"🔗 Seu link:\n{link}\n\n"
-            f"👥 Indicados: {total_refs(user_id)}",
+            "📋 Requisitos:\n"
+            "• Depósito acima de R$20\n"
+            "• Giro mínimo de R$200\n\n"
+            "🚀 Quanto mais você indica, mais ganha!\n\n"
+            "💡 Me chama que te ensino como fazer dinheiro com isso",
             parse_mode="Markdown",
-            reply_markup=botao_principal(user_id)
+            reply_markup=botoes(user_id)
         )
 
     elif c.data == "salario":
@@ -157,49 +136,27 @@ def cb(c):
             "🎯 5 pessoas = R$50\n"
             "🎯 50 pessoas = R$500\n"
             "🎯 100 pessoas = R$1000\n\n"
-            "💸 Pagamento toda segunda",
+            "💸 Pagamento toda segunda\n"
+            "❌ Sem rollover\n\n"
+            "🔥 Ideal pra quem quer renda online",
             parse_mode="Markdown",
-            reply_markup=botao_principal(user_id)
+            reply_markup=botoes(user_id)
         )
-
-# ===== BROADCAST =====
-@bot.message_handler(commands=['broadcast'])
-def broadcast(msg):
-    if msg.chat.id != ADMIN_ID:
-        return
-
-    bot.send_message(msg.chat.id, "📢 Envie a mensagem:")
-    bot.register_next_step_handler(msg, enviar)
-
-def enviar(msg):
-    cursor.execute("SELECT user_id FROM users")
-    users = cursor.fetchall()
-
-    for u in users:
-        try:
-            bot.send_message(
-                u[0],
-                msg.text,
-                reply_markup=botao_principal(u[0])
-            )
-            time.sleep(0.3)
-        except:
-            pass
 
 # ===== FUNIL =====
 def funil(user_id):
     try:
-        textos = [
+        mensagens = [
             "👀 Já entrou na POPTIG?\n\n🔥 Tá no começo ainda",
-            "💰 Tem gente se preparando pra lucrar...",
-            "👥 Você pode ganhar indicando",
+            "💰 Tem gente lucrando...\n\nNão fica de fora",
+            "👥 Dá pra ganhar indicando pessoas",
             "💸 Tem salário semanal também",
             "⚠️ Última chance de entrar cedo"
         ]
 
-        for t in textos:
+        for msg in mensagens:
             time.sleep(600)
-            bot.send_message(user_id, t, reply_markup=botao_principal(user_id))
+            bot.send_message(user_id, msg, reply_markup=botoes(user_id))
 
     except:
         pass
@@ -209,7 +166,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "online"
+    return "Bot online!"
 
 def run():
     bot.polling(none_stop=True)
