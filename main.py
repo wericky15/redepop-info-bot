@@ -1,4 +1,4 @@
-# === REDE POP BOT 12.0 FINAL ===
+# === REDE POP BOT 13.0 FINAL COMPLETO ===
 
 import os
 import threading
@@ -10,6 +10,7 @@ from flask import Flask
 import telebot
 from telebot import types
 
+# ===== CONFIG =====
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 8586126783
 ADMIN_LINK = "https://t.me/Whsantosz"
@@ -17,12 +18,12 @@ BASE_LINK = "https://11poptig.com/?pid=1403904093"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# IMAGENS
+# ===== IMAGENS =====
 IMG_LANCAMENTO = "https://i.postimg.cc/vHktD7NC/IMG-20260418-215448-769.jpg"
 IMG_INDICACAO = "https://i.postimg.cc/bw0S8Qcy/IMG-20260419-034225-247.jpg"
 IMG_SALARIO = "https://i.postimg.cc/Zny0QNx4/IMG-20260419-034227-151.jpg"
 
-# DATABASE
+# ===== DATABASE =====
 conn = sqlite3.connect("bot.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -74,7 +75,7 @@ def menu():
     kb.add(types.InlineKeyboardButton("💰 Salário semanal", callback_data="salario"))
     return kb
 
-# ===== ALERTA LEAD =====
+# ===== ALERTA =====
 def alerta(user):
     username = f"@{user.username}" if user.username else "Sem username"
 
@@ -104,8 +105,8 @@ def start(msg):
         "🎁 BENEFÍCIOS:\n"
         "• Bônus de novo membro\n"
         "• Salário semanal\n"
-        "• Indicação premiada\n"
-        "• Estratégia VIP\n\n"
+        "• Bônus por indicação\n"
+        "• Extras para agentes\n\n"
         "⚡ Quem entra no início sai na frente!",
         parse_mode="Markdown",
         reply_markup=menu()
@@ -161,12 +162,17 @@ def cb(c):
             uid,
             IMG_INDICACAO,
             caption=
-            "👥 *BÔNUS POR INDICAÇÃO*\n\n"
-            "💰 Até R$25 por pessoa\n\n"
+            "👥 *BÔNUS POR INDICAÇÃO POPTIG* 👥\n\n"
+            "🎁 Indique e desbloqueie os baús da TIG\n\n"
+            "💰 Valores:\n"
+            "• Primeiro baú: R$25\n"
+            "• 2 a 50: R$15 cada\n"
+            "• 51 a 1000: R$20 cada\n"
+            "• 1000+: R$25 cada\n\n"
             "📋 Requisitos:\n"
-            "• Depósito R$20\n"
-            "• Giro R$200\n\n"
-            "🚀 Quanto mais você indica, mais ganha!",
+            "• Depósito acima de R$20\n"
+            "• Giro acima de R$200\n\n"
+            "🚀 Quanto mais indicar, mais ganha!",
             parse_mode="Markdown",
             reply_markup=botoes(uid)
         )
@@ -176,21 +182,48 @@ def cb(c):
             uid,
             IMG_SALARIO,
             caption=
-            "💰 *SALÁRIO SEMANAL*\n\n"
-            "🎯 5 = R$50\n"
-            "🎯 50 = R$500\n"
-            "🎯 100 = R$1000\n\n"
+            "💰 *SALÁRIO SEMANAL POPTIG* 💰\n\n"
+            "📊 Metas:\n"
+            "5 = R$50\n"
+            "10 = R$100\n"
+            "20 = R$200\n"
+            "50 = R$500\n"
+            "100 = R$1000\n"
+            "500 = R$5000\n"
+            "1000 = R$10000\n\n"
             "💸 Pagamento toda segunda\n"
             "❌ Sem rollover",
             parse_mode="Markdown",
             reply_markup=botoes(uid)
         )
 
-# ===== RECEBER MENSAGENS =====
+    # ===== BOTÃO RESPONDER =====
+    elif c.data.startswith("responder_"):
+        user_id = int(c.data.split("_")[1])
+
+        msg = bot.send_message(
+            ADMIN_ID,
+            "✍️ Digite a resposta:"
+        )
+
+        bot.register_next_step_handler(msg, enviar_resposta, user_id)
+
+# ===== RECEBER MENSAGEM =====
 @bot.message_handler(func=lambda m: True)
 def receber(msg):
+    if msg.from_user.id == ADMIN_ID:
+        return
+
     user = msg.from_user
     username = f"@{user.username}" if user.username else "Sem username"
+
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton(
+            "💬 Responder",
+            callback_data=f"responder_{user.id}"
+        )
+    )
 
     bot.send_message(
         ADMIN_ID,
@@ -198,25 +231,17 @@ def receber(msg):
         f"👤 {user.first_name}\n"
         f"🔗 {username}\n"
         f"🆔 {user.id}\n\n"
-        f"📩 {msg.text}"
+        f"📩 {msg.text}",
+        reply_markup=markup
     )
 
-# ===== RESPONDER =====
-@bot.message_handler(commands=['responder'])
-def responder(msg):
-    if msg.chat.id != ADMIN_ID:
-        return
-
+# ===== ENVIAR RESPOSTA =====
+def enviar_resposta(msg, user_id):
     try:
-        partes = msg.text.split(" ", 2)
-        uid = int(partes[1])
-        texto = partes[2]
-
-        bot.send_message(uid, texto)
-        bot.send_message(msg.chat.id, "✅ Enviado!")
-
+        bot.send_message(user_id, msg.text)
+        bot.send_message(ADMIN_ID, "✅ Resposta enviada!")
     except:
-        bot.send_message(msg.chat.id, "Use:\n/responder ID mensagem")
+        bot.send_message(ADMIN_ID, "❌ Erro ao enviar")
 
 # ===== FUNIL =====
 def funil(uid):
