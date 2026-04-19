@@ -1,4 +1,4 @@
-# === REDE POP BOT 13.0 FINAL COMPLETO ===
+# === REDE POP BOT FINAL (13.0 + BONUS PIX) ===
 
 import os
 import threading
@@ -10,7 +10,6 @@ from flask import Flask
 import telebot
 from telebot import types
 
-# ===== CONFIG =====
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 8586126783
 ADMIN_LINK = "https://t.me/Whsantosz"
@@ -18,12 +17,12 @@ BASE_LINK = "https://11poptig.com/?pid=1403904093"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# ===== IMAGENS =====
+# IMAGENS
 IMG_LANCAMENTO = "https://i.postimg.cc/vHktD7NC/IMG-20260418-215448-769.jpg"
 IMG_INDICACAO = "https://i.postimg.cc/bw0S8Qcy/IMG-20260419-034225-247.jpg"
 IMG_SALARIO = "https://i.postimg.cc/Zny0QNx4/IMG-20260419-034227-151.jpg"
 
-# ===== DATABASE =====
+# DATABASE
 conn = sqlite3.connect("bot.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -69,6 +68,7 @@ def botoes(uid):
 
 def menu():
     kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("💸 BÔNUS PIX R$10", callback_data="pix"))
     kb.add(types.InlineKeyboardButton("🎯 Quero bônus VIP", callback_data="vip"))
     kb.add(types.InlineKeyboardButton("ℹ️ Informações", callback_data="info"))
     kb.add(types.InlineKeyboardButton("👥 Indicar amigos", callback_data="indicar"))
@@ -84,8 +84,7 @@ def alerta(user):
         f"🔥 NOVO LEAD\n\n"
         f"👤 {user.first_name}\n"
         f"🔗 {username}\n"
-        f"🆔 {user.id}\n"
-        f"👉 tg://user?id={user.id}"
+        f"🆔 {user.id}"
     )
 
 # ===== START =====
@@ -120,7 +119,24 @@ def cb(c):
     uid = c.from_user.id
     user = c.from_user
 
-    if c.data == "entrar":
+    if c.data == "pix":
+        bot.send_message(
+            uid,
+            "💸 *BÔNUS PIX R$10* 💸\n\n"
+            "🔥 Promoção ativa para novos membros\n\n"
+            "📋 COMO FUNCIONA:\n"
+            "• Faça 2 depósitos na plataforma\n"
+            "• Após isso, solicite seu bônus\n\n"
+            "💰 Você recebe R$10 via PIX\n\n"
+            "⚠️ Válido mediante verificação\n\n"
+            "👇 Após completar:",
+            parse_mode="Markdown",
+            reply_markup=types.InlineKeyboardMarkup().add(
+                types.InlineKeyboardButton("💬 Solicitar bônus", url=ADMIN_LINK)
+            )
+        )
+
+    elif c.data == "entrar":
         marcar_lead(uid)
         alerta(user)
 
@@ -197,18 +213,12 @@ def cb(c):
             reply_markup=botoes(uid)
         )
 
-    # ===== BOTÃO RESPONDER =====
     elif c.data.startswith("responder_"):
         user_id = int(c.data.split("_")[1])
-
-        msg = bot.send_message(
-            ADMIN_ID,
-            "✍️ Digite a resposta:"
-        )
-
+        msg = bot.send_message(ADMIN_ID, "✍️ Digite a resposta:")
         bot.register_next_step_handler(msg, enviar_resposta, user_id)
 
-# ===== RECEBER MENSAGEM =====
+# ===== RECEBER MSG =====
 @bot.message_handler(func=lambda m: True)
 def receber(msg):
     if msg.from_user.id == ADMIN_ID:
@@ -218,12 +228,7 @@ def receber(msg):
     username = f"@{user.username}" if user.username else "Sem username"
 
     markup = types.InlineKeyboardMarkup()
-    markup.add(
-        types.InlineKeyboardButton(
-            "💬 Responder",
-            callback_data=f"responder_{user.id}"
-        )
-    )
+    markup.add(types.InlineKeyboardButton("💬 Responder", callback_data=f"responder_{user.id}"))
 
     bot.send_message(
         ADMIN_ID,
@@ -235,19 +240,14 @@ def receber(msg):
         reply_markup=markup
     )
 
-# ===== ENVIAR RESPOSTA =====
 def enviar_resposta(msg, user_id):
-    try:
-        bot.send_message(user_id, msg.text)
-        bot.send_message(ADMIN_ID, "✅ Resposta enviada!")
-    except:
-        bot.send_message(ADMIN_ID, "❌ Erro ao enviar")
+    bot.send_message(user_id, msg.text)
+    bot.send_message(ADMIN_ID, "✅ Enviado")
 
 # ===== FUNIL =====
 def funil(uid):
     time.sleep(600)
     bot.send_message(uid, "👀 Já entrou na POPTIG?", reply_markup=botoes(uid))
-
     time.sleep(600)
     bot.send_message(uid, "⚠️ Última chance de entrar no começo!", reply_markup=botoes(uid))
 
