@@ -1,4 +1,4 @@
-# === REDE POP BOT 10.0 FINAL ===
+# === REDE POP BOT 11.0 FINAL PROFISSIONAL ===
 
 import os
 import threading
@@ -10,19 +10,19 @@ from flask import Flask
 import telebot
 from telebot import types
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 8586126783
 ADMIN_LINK = "https://t.me/Whsantosz"
 BASE_LINK = "https://11poptig.com/?pid=1403904093"
+
+bot = telebot.TeleBot(BOT_TOKEN)
 
 # IMAGENS
 IMG_LANCAMENTO = "https://i.postimg.cc/vHktD7NC/IMG-20260418-215448-769.jpg"
 IMG_INDICACAO = "https://i.postimg.cc/bw0S8Qcy/IMG-20260419-034225-247.jpg"
 IMG_SALARIO = "https://i.postimg.cc/Zny0QNx4/IMG-20260419-034227-151.jpg"
 
-bot = telebot.TeleBot(BOT_TOKEN)
-
-# ===== DATABASE =====
+# DATABASE
 conn = sqlite3.connect("bot.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -49,43 +49,42 @@ def salvar_usuario(user):
         )
         conn.commit()
 
-def marcar_lead(user_id):
-    cursor.execute("UPDATE users SET lead=1 WHERE user_id=?", (user_id,))
+def marcar_lead(uid):
+    cursor.execute("UPDATE users SET lead=1 WHERE user_id=?", (uid,))
     conn.commit()
 
-def marcar_afiliado(user_id):
-    cursor.execute("UPDATE users SET afiliado=1 WHERE user_id=?", (user_id,))
+def marcar_afiliado(uid):
+    cursor.execute("UPDATE users SET afiliado=1 WHERE user_id=?", (uid,))
     conn.commit()
 
-def gerar_link(user_id):
-    return f"{BASE_LINK}&user={user_id}"
+def gerar_link(uid):
+    return f"{BASE_LINK}&user={uid}"
 
-def botoes(user_id):
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🎰 Entrar na POPTIG", callback_data="click_entrar"))
-    markup.add(types.InlineKeyboardButton("💬 Falar com agente", url=ADMIN_LINK))
-    return markup
+def botoes(uid):
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("🎰 Entrar na POPTIG", callback_data="entrar"))
+    kb.add(types.InlineKeyboardButton("💬 Falar com agente", url=ADMIN_LINK))
+    return kb
 
 def menu():
-    m = types.InlineKeyboardMarkup()
-    m.add(types.InlineKeyboardButton("🎯 Bônus VIP", callback_data="vip"))
-    m.add(types.InlineKeyboardButton("ℹ️ Informações", callback_data="info"))
-    m.add(types.InlineKeyboardButton("👥 Indicar amigos", callback_data="indicar"))
-    m.add(types.InlineKeyboardButton("💰 Salário semanal", callback_data="salario"))
-    return m
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("🎯 Quero bônus VIP", callback_data="vip"))
+    kb.add(types.InlineKeyboardButton("ℹ️ Informações", callback_data="info"))
+    kb.add(types.InlineKeyboardButton("👥 Indicar amigos", callback_data="indicar"))
+    kb.add(types.InlineKeyboardButton("💰 Salário semanal", callback_data="salario"))
+    return kb
 
 # ===== ALERTA =====
-def alerta_lead(user):
+def alerta(user):
     username = f"@{user.username}" if user.username else "Sem username"
-    link_user = f"tg://user?id={user.id}"
 
     bot.send_message(
         ADMIN_ID,
-        f"🔥 NOVO LEAD!\n\n"
+        f"🔥 NOVO LEAD\n\n"
         f"👤 Nome: {user.first_name}\n"
         f"🔗 Username: {username}\n"
         f"🆔 ID: {user.id}\n\n"
-        f"👉 Abrir perfil:\n{link_user}"
+        f"👉 tg://user?id={user.id}"
     )
 
 # ===== START =====
@@ -98,16 +97,16 @@ def start(msg):
         user.id,
         IMG_LANCAMENTO,
         caption=
-        "🔥 *BEM-VINDO À REDE POP (POPTIG)* 🔥\n\n"
-        "📅 Lançamento: 20 de Abril\n"
+        "🔥 *LANÇAMENTO OFICIAL POPTIG* 🔥\n\n"
+        "📅 Data: 20 de Abril\n\n"
         "💰 Depósito mínimo: R$10\n"
         "💸 Saque mínimo: R$20\n\n"
-        "🎁 Benefícios:\n"
-        "• Bônus de entrada\n"
+        "🎁 BENEFÍCIOS:\n"
+        "• Bônus de novo membro\n"
         "• Salário semanal\n"
-        "• Indicação premiada\n"
-        "• Estratégia VIP\n\n"
-        "⚡ Quem entra cedo sai na frente!",
+        "• Bônus por indicação\n"
+        "• Extras para agentes\n\n"
+        "⚡ Quem entra no início sai na frente!",
         parse_mode="Markdown",
         reply_markup=menu()
     )
@@ -117,17 +116,16 @@ def start(msg):
 # ===== CALLBACK =====
 @bot.callback_query_handler(func=lambda c: True)
 def cb(c):
+    uid = c.from_user.id
     user = c.from_user
-    uid = user.id
 
-    if c.data == "click_entrar":
+    if c.data == "entrar":
         marcar_lead(uid)
-        alerta_lead(user)
+        alerta(user)
 
         bot.send_message(
             uid,
-            "🔥 *Você está a um passo de começar!*\n\nClique abaixo:",
-            parse_mode="Markdown",
+            "🔥 Clique abaixo para acessar a plataforma:",
             reply_markup=types.InlineKeyboardMarkup().add(
                 types.InlineKeyboardButton("🎰 ACESSAR POPTIG", url=gerar_link(uid))
             )
@@ -139,8 +137,8 @@ def cb(c):
             "🎯 *BÔNUS VIP LIBERADO*\n\n"
             "1️⃣ Crie sua conta\n"
             "2️⃣ Me chama no privado\n"
-            "3️⃣ Receba estratégia\n\n"
-            "💰 Já tem gente lucrando!",
+            "3️⃣ Receba estratégia VIP\n\n"
+            "💰 Já tem gente lucrando no início!",
             parse_mode="Markdown",
             reply_markup=botoes(uid)
         )
@@ -148,12 +146,12 @@ def cb(c):
     elif c.data == "info":
         bot.send_message(
             uid,
-            "ℹ️ *COMO FUNCIONA*\n\n"
-            "💰 Ganhos jogando\n"
-            "👥 Ganhos indicando\n\n"
-            "📊 Depósito: R$10\n"
-            "📊 Saque: R$20\n\n"
-            "🔥 Plataforma nova = oportunidade",
+            "ℹ️ *SOBRE A POPTIG*\n\n"
+            "💰 Plataforma com ganhos reais\n"
+            "👥 Sistema de indicação ativo\n\n"
+            "📊 Depósito mínimo: R$10\n"
+            "📊 Saque mínimo: R$20\n\n"
+            "🔥 Ideal pra começar com pouco",
             parse_mode="Markdown",
             reply_markup=botoes(uid)
         )
@@ -165,12 +163,17 @@ def cb(c):
             uid,
             IMG_INDICACAO,
             caption=
-            "👥 *GANHE COM INDICAÇÃO*\n\n"
-            "💰 Até R$25 por pessoa\n\n"
-            "📋 Requisitos:\n"
-            "• Depósito mínimo R$20\n"
-            "• Giro mínimo R$200\n\n"
-            "🚀 Quanto mais você chama, mais ganha!",
+            "👥 *BÔNUS POR INDICAÇÃO POPTIG* 👥\n\n"
+            "🎁 Indique e desbloqueie os baús\n\n"
+            "💰 VALORES:\n"
+            "• Primeiro baú: R$25\n"
+            "• 2 a 50: R$15 cada\n"
+            "• 51 a 1000: R$20 cada\n"
+            "• 1000+: R$25 cada\n\n"
+            "📋 REQUISITOS:\n"
+            "• Depósito acima de R$20\n"
+            "• Giro acima de R$200\n\n"
+            "🚀 Quanto mais indicar, mais ganha!",
             parse_mode="Markdown",
             reply_markup=botoes(uid)
         )
@@ -180,47 +183,44 @@ def cb(c):
             uid,
             IMG_SALARIO,
             caption=
-            "💰 *SALÁRIO SEMANAL*\n\n"
-            "🎯 5 pessoas = R$50\n"
-            "🎯 50 pessoas = R$500\n"
-            "🎯 100 pessoas = R$1000\n\n"
+            "💰 *SALÁRIO SEMANAL POPTIG* 💰\n\n"
+            "🌟 META A PARTIR DE 5 DEPOSITANTES\n\n"
+            "📊 METAS:\n"
+            "5 = R$50\n"
+            "10 = R$100\n"
+            "20 = R$200\n"
+            "50 = R$500\n"
+            "100 = R$1000\n"
+            "500 = R$5000\n"
+            "1000 = R$10000\n\n"
             "💸 Pagamento toda segunda\n"
             "❌ Sem rollover",
             parse_mode="Markdown",
             reply_markup=botoes(uid)
         )
 
-# ===== FUNIL (2 MENSAGENS) =====
-def funil(user_id):
-    try:
-        time.sleep(600)
+# ===== FUNIL (2 MSG) =====
+def funil(uid):
+    time.sleep(600)
+    bot.send_message(uid, "👀 Já entrou na POPTIG?", reply_markup=botoes(uid))
 
-        bot.send_message(
-            user_id,
-            "👀 Já garantiu sua vaga?\n\n🔥 O lançamento já começou",
-            reply_markup=botoes(user_id)
-        )
+    time.sleep(600)
+    bot.send_message(uid, "⚠️ Última chance de entrar no começo!", reply_markup=botoes(uid))
 
-        time.sleep(600)
-
-        bot.send_message(
-            user_id,
-            "⚠️ Último aviso:\n\n🔥 Agora é o melhor momento pra entrar",
-            reply_markup=botoes(user_id)
-        )
-
-    except:
-        pass
+# ===== FALLBACK =====
+@bot.message_handler(func=lambda m: True)
+def fallback(msg):
+    bot.send_message(msg.chat.id, "Use o menu acima 👆")
 
 # ===== FLASK =====
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "online"
+    return "ok"
 
 def run():
-    bot.polling(none_stop=True)
+    bot.infinity_polling()
 
 if __name__ == "__main__":
     threading.Thread(target=run).start()
