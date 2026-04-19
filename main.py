@@ -1,4 +1,4 @@
-# === REDE POP BOT 5.1 (FINAL SEM ERRO) ===
+# === REDE POP BOT 5.2 (FINAL COMPLETO) ===
 
 import os
 import threading
@@ -16,10 +16,10 @@ BOT_USERNAME = os.environ.get("BOT_USERNAME", "RedePop_Info_bot")
 
 BASE_LINK = "https://11poptig.com/?pid=1403904093"
 
-# 🔥 IMAGENS (IMGUR)
-IMG_LANCAMENTO = "https://i.imgur.com/ri8PK4b.jpeg"
-IMG_INDICACAO = "https://i.imgur.com/TZaEuay.jpeg"
-IMG_SALARIO = "https://i.imgur.com/ls8l2Wb.jpeg"
+# 🔥 IMAGENS (POSTIMAGES - FUNCIONANDO)
+IMG_LANCAMENTO = "https://i.postimg.cc/vHktD7NC/IMG-20260418-215448-769.jpg"
+IMG_INDICACAO = "https://i.postimg.cc/bw0S8Qcy/IMG-20260419-034225-247.jpg"
+IMG_SALARIO = "https://i.postimg.cc/Zny0QNx4/IMG-20260419-034227-151.jpg"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -108,7 +108,6 @@ def start(msg):
 def cb(c):
     user_id = c.from_user.id
 
-    # VIP
     if c.data == "vip":
         bot.send_message(
             user_id,
@@ -121,7 +120,6 @@ def cb(c):
             reply_markup=botao_link("🎰 Entrar agora", gerar_link(user_id))
         )
 
-    # INFO
     elif c.data == "info":
         bot.send_message(
             user_id,
@@ -135,7 +133,6 @@ def cb(c):
             reply_markup=botao_link("🔥 Começar agora", gerar_link(user_id))
         )
 
-    # INDICAR
     elif c.data == "indicar":
         link = f"https://t.me/{BOT_USERNAME}?start=ref_{user_id}"
 
@@ -154,7 +151,6 @@ def cb(c):
             reply_markup=botao_link("🚀 Convidar", link)
         )
 
-    # SALARIO
     elif c.data == "salario":
         bot.send_photo(
             user_id,
