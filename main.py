@@ -1,4 +1,4 @@
-# === REDE POP BOT 7.0 (LEADS + COMPLETO) ===
+# === REDE POP BOT 8.0 FINAL (LEADS + ALERTA) ===
 
 import os
 import threading
@@ -30,6 +30,8 @@ cursor = conn.cursor()
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY,
+    username TEXT,
+    first_name TEXT,
     date TEXT,
     lead INTEGER DEFAULT 0,
     afiliado INTEGER DEFAULT 0
@@ -38,12 +40,17 @@ CREATE TABLE IF NOT EXISTS users (
 conn.commit()
 
 # ===== FUNÇÕES =====
-def salvar_usuario(user_id):
-    cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
+def salvar_usuario(user):
+    cursor.execute("SELECT * FROM users WHERE user_id=?", (user.id,))
     if not cursor.fetchone():
         cursor.execute(
-            "INSERT INTO users (user_id, date, lead, afiliado) VALUES (?, ?, 0, 0)",
-            (user_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            "INSERT INTO users VALUES (?, ?, ?, ?, 0, 0)",
+            (
+                user.id,
+                user.username,
+                user.first_name,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            )
         )
         conn.commit()
 
@@ -72,14 +79,30 @@ def menu():
     markup.add(types.InlineKeyboardButton("💰 Salário semanal", callback_data="salario"))
     return markup
 
+# ===== ALERTA =====
+def alerta_lead(user):
+    try:
+        username = f"@{user.username}" if user.username else "Sem username"
+
+        bot.send_message(
+            ADMIN_ID,
+            f"🔥 NOVO LEAD!\n\n"
+            f"👤 Nome: {user.first_name}\n"
+            f"🔗 Username: {username}\n"
+            f"🆔 ID: {user.id}\n\n"
+            f"💰 Clicou em ENTRAR"
+        )
+    except:
+        pass
+
 # ===== START =====
 @bot.message_handler(commands=['start'])
 def start(msg):
-    user_id = msg.from_user.id
-    salvar_usuario(user_id)
+    user = msg.from_user
+    salvar_usuario(user)
 
     bot.send_photo(
-        user_id,
+        user.id,
         IMG_LANCAMENTO,
         caption=
         "🔥 *LANÇAMENTO POPTIG* 🔥\n\n"
@@ -91,20 +114,21 @@ def start(msg):
         reply_markup=menu()
     )
 
-    threading.Thread(target=funil, args=(user_id,)).start()
+    threading.Thread(target=funil, args=(user.id,)).start()
 
 # ===== CALLBACK =====
 @bot.callback_query_handler(func=lambda c: True)
 def cb(c):
-    user_id = c.from_user.id
+    user = c.from_user
+    user_id = user.id
 
-    # CLIQUE ENTRAR (LEAD)
     if c.data == "click_entrar":
         marcar_lead(user_id)
+        alerta_lead(user)
 
         bot.send_message(
             user_id,
-            "🔥 Boa escolha!\n\nClique abaixo para acessar a plataforma:",
+            "🔥 Boa escolha!\n\nClique abaixo:",
             reply_markup=types.InlineKeyboardMarkup().add(
                 types.InlineKeyboardButton("🎰 ACESSAR POPTIG", url=gerar_link(user_id))
             )
@@ -113,10 +137,7 @@ def cb(c):
     elif c.data == "vip":
         bot.send_message(
             user_id,
-            "🎯 *BÔNUS VIP LIBERADO*\n\n"
-            "👉 Cria sua conta e me chama\n"
-            "Vou te passar estratégia pra começar forte\n\n"
-            "🔥 Aproveita o lançamento!",
+            "🎯 *BÔNUS VIP*\n\nCria a conta e me chama que te ajudo!",
             parse_mode="Markdown",
             reply_markup=botoes(user_id)
         )
@@ -124,13 +145,7 @@ def cb(c):
     elif c.data == "info":
         bot.send_message(
             user_id,
-            "ℹ️ *COMO FUNCIONA*\n\n"
-            "💰 Ganhos jogando\n"
-            "👥 Ganhos indicando\n\n"
-            "📊 Depósito mínimo: R$10\n"
-            "📊 Saque mínimo: R$20\n\n"
-            "🔥 Plataforma nova = oportunidade",
-            parse_mode="Markdown",
+            "ℹ️ Depósito: R$10\nSaque: R$20\n\nGanhe jogando e indicando!",
             reply_markup=botoes(user_id)
         )
 
@@ -141,14 +156,8 @@ def cb(c):
             user_id,
             IMG_INDICACAO,
             caption=
-            "👥 *BÔNUS POR INDICAÇÃO* 👥\n\n"
-            "💰 Até R$25 por pessoa\n\n"
-            "📋 Requisitos:\n"
-            "• Depósito acima de R$20\n"
-            "• Giro mínimo de R$200\n\n"
-            "🚀 Quanto mais você indica, mais ganha!\n\n"
-            "💡 Me chama que te ensino como fazer dinheiro com isso",
-            parse_mode="Markdown",
+            "👥 Ganhe até R$25 por indicação!\n\n"
+            "Requisitos:\nDepósito R$20\nGiro R$200",
             reply_markup=botoes(user_id)
         )
 
@@ -157,20 +166,13 @@ def cb(c):
             user_id,
             IMG_SALARIO,
             caption=
-            "💰 *SALÁRIO SEMANAL*\n\n"
-            "🎯 5 pessoas = R$50\n"
-            "🎯 50 pessoas = R$500\n"
-            "🎯 100 pessoas = R$1000\n\n"
-            "💸 Pagamento toda segunda\n"
-            "❌ Sem rollover\n\n"
-            "🔥 Ideal pra quem quer renda online",
-            parse_mode="Markdown",
+            "💰 Salário semanal!\n\n5 pessoas = R$50\n50 = R$500\n100 = R$1000",
             reply_markup=botoes(user_id)
         )
 
 # ===== COMANDO LEADS =====
 @bot.message_handler(commands=['leads'])
-def ver_leads(msg):
+def leads(msg):
     if msg.chat.id != ADMIN_ID:
         return
 
@@ -185,26 +187,23 @@ def ver_leads(msg):
 
     bot.send_message(
         msg.chat.id,
-        f"📊 RELATÓRIO\n\n"
-        f"👥 Total: {total}\n"
-        f"🔥 Leads: {leads}\n"
-        f"💰 Afiliados: {afiliados}"
+        f"👥 Total: {total}\n🔥 Leads: {leads}\n💰 Afiliados: {afiliados}"
     )
 
 # ===== FUNIL =====
 def funil(user_id):
     try:
-        mensagens = [
-            "👀 Já entrou na POPTIG?\n\n🔥 Tá no começo ainda",
-            "💰 Tem gente lucrando...\n\nNão fica de fora",
-            "👥 Dá pra ganhar indicando pessoas",
-            "💸 Tem salário semanal também",
-            "⚠️ Última chance de entrar cedo"
+        msgs = [
+            "👀 Já entrou?",
+            "💰 Tá no começo...",
+            "👥 Dá pra indicar",
+            "💸 Tem salário",
+            "⚠️ Última chance"
         ]
 
-        for msg in mensagens:
+        for m in msgs:
             time.sleep(600)
-            bot.send_message(user_id, msg, reply_markup=botoes(user_id))
+            bot.send_message(user_id, m, reply_markup=botoes(user_id))
 
     except:
         pass
@@ -214,7 +213,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Bot online!"
+    return "online"
 
 def run():
     bot.polling(none_stop=True)
