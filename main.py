@@ -1,4 +1,4 @@
-# === REDE POP BOT FINAL (13.0 + BONUS PIX) ===
+# === REDE POP BOT FINAL CHEFEE ===
 
 import os
 import threading
@@ -119,7 +119,12 @@ def cb(c):
     uid = c.from_user.id
     user = c.from_user
 
+    # ===== BONUS PIX =====
     if c.data == "pix":
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🎰 ACESSAR POPTIG", url=gerar_link(uid)))
+        markup.add(types.InlineKeyboardButton("💬 Falar com agente", url=ADMIN_LINK))
+
         bot.send_message(
             uid,
             "💸 *BÔNUS PIX R$10* 💸\n\n"
@@ -128,12 +133,9 @@ def cb(c):
             "• Faça 2 depósitos na plataforma\n"
             "• Após isso, solicite seu bônus\n\n"
             "💰 Você recebe R$10 via PIX\n\n"
-            "⚠️ Válido mediante verificação\n\n"
-            "👇 Após completar:",
+            "⚠️ Válido mediante verificação",
             parse_mode="Markdown",
-            reply_markup=types.InlineKeyboardMarkup().add(
-                types.InlineKeyboardButton("💬 Solicitar bônus", url=ADMIN_LINK)
-            )
+            reply_markup=markup
         )
 
     elif c.data == "entrar":
@@ -142,7 +144,7 @@ def cb(c):
 
         bot.send_message(
             uid,
-            "🔥 Clique abaixo para acessar a plataforma:",
+            "🔥 Clique abaixo para acessar:",
             reply_markup=types.InlineKeyboardMarkup().add(
                 types.InlineKeyboardButton("🎰 ACESSAR POPTIG", url=gerar_link(uid))
             )
@@ -152,9 +154,8 @@ def cb(c):
         bot.send_message(
             uid,
             "🎯 *BÔNUS VIP LIBERADO*\n\n"
-            "1️⃣ Crie sua conta\n"
-            "2️⃣ Me chama no privado\n"
-            "3️⃣ Receba estratégia VIP",
+            "Crie sua conta e me chama no privado\n"
+            "vou te ajudar com estratégia",
             parse_mode="Markdown",
             reply_markup=botoes(uid)
         )
@@ -178,13 +179,8 @@ def cb(c):
             uid,
             IMG_INDICACAO,
             caption=
-            "👥 *BÔNUS POR INDICAÇÃO POPTIG* 👥\n\n"
-            "🎁 Indique e desbloqueie os baús da TIG\n\n"
-            "💰 Valores:\n"
-            "• Primeiro baú: R$25\n"
-            "• 2 a 50: R$15 cada\n"
-            "• 51 a 1000: R$20 cada\n"
-            "• 1000+: R$25 cada\n\n"
+            "👥 *BÔNUS POR INDICAÇÃO* 👥\n\n"
+            "💰 Até R$25 por pessoa\n\n"
             "📋 Requisitos:\n"
             "• Depósito acima de R$20\n"
             "• Giro acima de R$200\n\n"
@@ -198,17 +194,9 @@ def cb(c):
             uid,
             IMG_SALARIO,
             caption=
-            "💰 *SALÁRIO SEMANAL POPTIG* 💰\n\n"
-            "📊 Metas:\n"
-            "5 = R$50\n"
-            "10 = R$100\n"
-            "20 = R$200\n"
-            "50 = R$500\n"
-            "100 = R$1000\n"
-            "500 = R$5000\n"
-            "1000 = R$10000\n\n"
-            "💸 Pagamento toda segunda\n"
-            "❌ Sem rollover",
+            "💰 *SALÁRIO SEMANAL* 💰\n\n"
+            "5 = R$50\n10 = R$100\n20 = R$200\n50 = R$500\n100 = R$1000\n\n"
+            "💸 Pagamento toda segunda\n❌ Sem rollover",
             parse_mode="Markdown",
             reply_markup=botoes(uid)
         )
