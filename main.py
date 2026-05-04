@@ -98,7 +98,7 @@ def start(msg):
         IMG_LANCAMENTO,
         caption=
         "🔥 *LANÇAMENTO OFICIAL POPNOV* 🔥\n\n"
-        "📅 20 de Abril\n\n"
+        "📅 05 de Maio\n\n"
         "💰 Depósito mínimo: R$10\n"
         "💸 Saque mínimo: R$20\n\n"
         "🎁 BENEFÍCIOS:\n"
