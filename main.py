@@ -13,14 +13,14 @@ from telebot import types
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 8586126783
 ADMIN_LINK = "https://t.me/Whsantosz"
-BASE_LINK = "https://11poptig.com/?pid=1403904093"
+BASE_LINK = "https://22popnov.com/?pid=1886776055"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # IMAGENS
-IMG_LANCAMENTO = "https://i.postimg.cc/vHktD7NC/IMG-20260418-215448-769.jpg"
-IMG_INDICACAO = "https://i.postimg.cc/bw0S8Qcy/IMG-20260419-034225-247.jpg"
-IMG_SALARIO = "https://i.postimg.cc/Zny0QNx4/IMG-20260419-034227-151.jpg"
+IMG_LANCAMENTO = "https://i.postimg.cc/Xq89Tz9V/lancamento-popnov.jpg"
+IMG_INDICACAO = "https://i.postimg.cc/RCRfC2nJ/bonus-de-indicacao.jpg"
+IMG_SALARIO = "https://i.postimg.cc/LsLYcWMQ/salario-semanal.jpg"
 
 # DATABASE
 conn = sqlite3.connect("bot.db", check_same_thread=False)
@@ -62,7 +62,7 @@ def gerar_link(uid):
 
 def botoes(uid):
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("🎰 Entrar na POPTIG", callback_data="entrar"))
+    kb.add(types.InlineKeyboardButton("🎰 Entrar na POPNOV", callback_data="entrar"))
     kb.add(types.InlineKeyboardButton("💬 Falar com agente", url=ADMIN_LINK))
     return kb
 
@@ -97,7 +97,7 @@ def start(msg):
         user.id,
         IMG_LANCAMENTO,
         caption=
-        "🔥 *LANÇAMENTO OFICIAL POPTIG* 🔥\n\n"
+        "🔥 *LANÇAMENTO OFICIAL POPNOV* 🔥\n\n"
         "📅 20 de Abril\n\n"
         "💰 Depósito mínimo: R$10\n"
         "💸 Saque mínimo: R$20\n\n"
@@ -122,7 +122,7 @@ def cb(c):
     # ===== BONUS PIX =====
     if c.data == "pix":
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("🎰 ACESSAR POPTIG", url=gerar_link(uid)))
+        markup.add(types.InlineKeyboardButton("🎰 ACESSAR POPNOV", url=gerar_link(uid)))
         markup.add(types.InlineKeyboardButton("💬 Falar com agente", url=ADMIN_LINK))
 
         bot.send_message(
@@ -146,7 +146,7 @@ def cb(c):
             uid,
             "🔥 Clique abaixo para acessar:",
             reply_markup=types.InlineKeyboardMarkup().add(
-                types.InlineKeyboardButton("🎰 ACESSAR POPTIG", url=gerar_link(uid))
+                types.InlineKeyboardButton("🎰 ACESSAR POPNOV", url=gerar_link(uid))
             )
         )
 
@@ -163,7 +163,7 @@ def cb(c):
     elif c.data == "info":
         bot.send_message(
             uid,
-            "ℹ️ *SOBRE A POPTIG*\n\n"
+            "ℹ️ *SOBRE A POPNOV*\n\n"
             "💰 Plataforma com ganhos reais\n"
             "👥 Sistema de indicação ativo\n\n"
             "📊 Depósito mínimo: R$10\n"
@@ -235,7 +235,7 @@ def enviar_resposta(msg, user_id):
 # ===== FUNIL =====
 def funil(uid):
     time.sleep(600)
-    bot.send_message(uid, "👀 Já entrou na POPTIG?", reply_markup=botoes(uid))
+    bot.send_message(uid, "👀 Já entrou na POPNOV?", reply_markup=botoes(uid))
     time.sleep(600)
     bot.send_message(uid, "⚠️ Última chance de entrar no começo!", reply_markup=botoes(uid))
 
