@@ -99,8 +99,8 @@ def start(msg):
         caption=
         "🔥 *LANÇAMENTO OFICIAL POPFEZ* 🔥\n\n"
         "📅 18/05\n\n"
-        "💰 Depósito mínimo: R$10\n"
-        "💸 Saque mínimo: R$20\n\n"
+        "💰 Depósito mínimo: R$20\n"
+        "💸 Saque mínimo: R$30\n\n"
         "🎁 BENEFÍCIOS:\n"
         "• Bônus de novo membro\n"
         "• Salário semanal\n"
@@ -130,9 +130,9 @@ def cb(c):
             "💸 *BÔNUS PIX R$10* 💸\n\n"
             "🔥 Promoção ativa para novos membros\n\n"
             "📋 COMO FUNCIONA:\n"
-            "• Faça 2 depósitos na plataforma\n"
+            "• Faça 1 depósitos na plataforma\n"
             "• Após isso, solicite seu bônus\n\n"
-            "💰 Você recebe R$10 via PIX\n\n"
+            "💰 Você recebe R$10 via PIX ou BONUS\n\n"
             "⚠️ Válido mediante verificação",
             parse_mode="Markdown",
             reply_markup=markup
@@ -166,8 +166,8 @@ def cb(c):
             "ℹ️ *SOBRE A POPFEZ*\n\n"
             "💰 Plataforma com ganhos reais\n"
             "👥 Sistema de indicação ativo\n\n"
-            "📊 Depósito mínimo: R$10\n"
-            "📊 Saque mínimo: R$20",
+            "📊 Depósito mínimo: R$20\n"
+            "📊 Saque mínimo: R$30",
             parse_mode="Markdown",
             reply_markup=botoes(uid)
         )
@@ -180,7 +180,7 @@ def cb(c):
             IMG_INDICACAO,
             caption=
             "👥 *BÔNUS POR INDICAÇÃO* 👥\n\n"
-            "💰 Até R$25 por pessoa\n\n"
+            "💰 Até R$30 por pessoa\n\n"
             "📋 Requisitos:\n"
             "• Depósito acima de R$20\n"
             "• Giro acima de R$200\n\n"
